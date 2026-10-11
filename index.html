@@ -21,19 +21,115 @@
 .task-actions{position:relative;flex-shrink:0}.task-menu{display:none;position:absolute;right:0;top:30px;z-index:20;min-width:135px;padding:5px;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 30px #0004}.task-menu.open{display:grid}.task-menu button{border:0;background:transparent;text-align:left;padding:9px 10px;border-radius:7px;font-size:12px}.task-menu button:hover{background:var(--panel2)}.task-menu .danger-action{color:var(--coral)}
 .goal-card{cursor:pointer}.goal-card:focus-visible{outline:2px solid var(--mint);outline-offset:3px}.checkline{display:flex;gap:9px;align-items:center;margin:8px 0}.checkline input{width:auto}
 @media(max-width:760px){.dashgrid{grid-template-columns:1fr!important}.dash-task-list{max-height:210px}.score{align-items:center}.modules{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* LifeOS refinement preview: login clarity, spacing, and restrained module accents */
+#authGate>div{padding:32px 30px;box-shadow:0 22px 70px #0003}
+#authGate h1{letter-spacing:-.8px}
+#authGate button{transition:transform .16s ease,filter .16s ease,box-shadow .16s ease}
+#authGate button:hover{filter:brightness(1.06);transform:translateY(-1px);box-shadow:0 7px 20px #79a9ff24}
+.card{transition:border-color .16s ease,transform .16s ease,box-shadow .16s ease}
+.cardtitle{font-size:14px;font-weight:700}
+.head{margin-bottom:16px}
+.score{padding:calc(var(--density) + 2px)}
+#page-home #dashHabits .habiticon{background:color-mix(in srgb,var(--mint) 15%,var(--panel2));color:var(--mint)}
+#page-home .timer-ring{border-top-color:var(--yellow);box-shadow:0 0 0 1px color-mix(in srgb,var(--yellow) 12%,transparent)}
+#page-home #studyBar{background:#b49aff}
+.nav{transition:background .15s ease,color .15s ease}
+.primary{transition:transform .15s ease,filter .15s ease}
+.primary:hover{filter:brightness(1.06);transform:translateY(-1px)}
+@media(max-width:760px){#authGate>div{padding:27px 22px}.card{padding:16px}.head{margin-bottom:13px}}
+@media(prefers-reduced-motion:reduce){.card,.nav,.primary,#authGate button{transition:none}}
+
 </style>
 </head>
 <body>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<div id="authGate" style="position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:22px;background:#17191b;color:#f3f2ef;font:14px/1.5 Inter,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif">
- <div style="width:min(430px,100%);padding:28px;border:1px solid #373c40;border-radius:22px;background:#202326;text-align:center">
-  <div style="width:48px;height:48px;border-radius:15px;background:#79a9ff;color:#17202d;display:grid;place-items:center;margin:0 auto 16px;font:700 24px Georgia,serif">L</div>
-  <div style="font-size:10px;letter-spacing:2px;color:#a2a9ab;text-transform:uppercase">Personal command centre</div><h1 style="font:500 34px Georgia,serif;margin:8px 0">LifeOS</h1>
-  <p style="color:#a2a9ab;margin:0 0 22px">Sign in with Google to access your workspace and sync it across your devices.</p>
-  <button id="googleSignIn" style="width:100%;border:0;border-radius:11px;padding:13px;background:#79a9ff;color:#101c2f;font:600 14px inherit;cursor:pointer">Continue with Google</button>
-  <p id="authMessage" style="font-size:12px;color:#a2a9ab;margin:14px 0 0">Your workspace is stored in your LifeOS cloud account.</p>
- </div>
+<div id="authGate" class="lifeos-auth-gate">
+  <div class="auth-split">
+    <section class="auth-brand-panel" aria-label="About LifeOS">
+      <div class="auth-brand">
+        <div class="auth-logo" aria-hidden="true">
+          <svg viewBox="0 0 64 64" width="44" height="44"><path d="M32 4 56 18v28L32 60 8 46V18Z" fill="#79a9ff" fill-opacity=".20"/><path d="M20 22 32 15 44 22v20L32 49 20 42Z" fill="none" stroke="#9dc0ff" stroke-width="3" stroke-linejoin="round"/><path d="m25 32 5 5 10-12" fill="none" stroke="#f2f6ff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div><div class="auth-brand-name">LifeOS</div><div class="auth-brand-kicker">PERSONAL COMMAND CENTRE</div></div>
+      </div>
+      <div class="auth-brand-copy">
+        <p class="auth-eyebrow">YOUR LIFE, IN ONE PLACE</p>
+        <h1>Plan. Focus.<br><span>Build a better you.</span></h1>
+        <p class="auth-lead">A calmer, more intentional way to organise your life — from daily tasks to long-term goals.</p>
+      </div>
+      <div class="auth-feature-list">
+        <div class="auth-feature"><span class="auth-feature-icon">✓</span><div><b>Tasks & planning</b><small>Know what matters today.</small></div></div>
+        <div class="auth-feature"><span class="auth-feature-icon">↗</span><div><b>Habits & goals</b><small>Build consistency over time.</small></div></div>
+        <div class="auth-feature"><span class="auth-feature-icon">◷</span><div><b>Study & focus</b><small>Make time for deep work.</small></div></div>
+        <div class="auth-feature"><span class="auth-feature-icon">▦</span><div><b>Everything together</b><small>Your personal command centre.</small></div></div>
+      </div>
+      <p class="auth-brand-footer">Progress, without the pressure.</p>
+    </section>
+    <section class="auth-form-panel" aria-label="Sign in to LifeOS">
+      <div class="auth-form-card">
+        <div class="auth-form-mark" aria-hidden="true">
+          <svg viewBox="0 0 48 48" width="32" height="32"><path d="M24 3 42 13.5v21L24 45 6 34.5v-21Z" fill="#79a9ff" fill-opacity=".2"/><path d="M15 17 24 11.5 33 17v14L24 36.5 15 31Z" fill="none" stroke="#9dc0ff" stroke-width="2.5" stroke-linejoin="round"/></svg>
+        </div>
+        <p class="auth-form-eyebrow">WELCOME BACK</p>
+        <h2>Sign in to LifeOS</h2>
+        <p class="auth-form-description">Continue to your workspace and pick up where you left off.</p>
+        <button id="googleSignIn" class="auth-google-button"><span class="google-g" aria-hidden="true">G</span><span>Continue with Google</span><span class="auth-button-arrow" aria-hidden="true">→</span></button>
+        <div class="auth-divider"><span></span><small>YOUR WORKSPACE, YOURS</small><span></span></div>
+        <div class="auth-trust-list">
+          <div><span class="auth-trust-icon">◇</span><span><b>Private & secure</b><small>Your data stays yours.</small></span></div>
+          <div><span class="auth-trust-icon">⌁</span><span><b>Synced across devices</b><small>Your workspace goes with you.</small></span></div>
+        </div>
+        <p id="authMessage" class="auth-message">Sign in securely to access your personal workspace.</p>
+      </div>
+      <p class="auth-form-footer">Made for a more intentional everyday.</p>
+    </section>
+  </div>
 </div>
+
+<style id="lifeos-split-login">
+#authGate.lifeos-auth-gate{position:fixed;inset:0;z-index:1000;overflow:auto;background:#111418;color:#f4f6fa;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;display:flex;align-items:stretch;justify-content:center;padding:clamp(18px,4vw,56px);box-sizing:border-box}
+.lifeos-auth-gate *{box-sizing:border-box}
+.lifeos-auth-gate .auth-split{width:min(1120px,100%);min-height:min(720px,calc(100vh - 2 * clamp(18px,4vw,56px)));display:grid;grid-template-columns:minmax(0,1.1fr) minmax(340px,.9fr);border:1px solid #2b323d;border-radius:26px;overflow:hidden;background:#171b21;box-shadow:0 28px 90px rgba(0,0,0,.28);margin:auto}
+.lifeos-auth-gate .auth-brand-panel{padding:clamp(28px,5vw,64px);display:flex;flex-direction:column;justify-content:space-between;background:radial-gradient(ellipse at 12% 12%,rgba(86,137,220,.16),transparent 42%),linear-gradient(145deg,#1b2431,#171b21 68%);border-right:1px solid #2b323d}
+.lifeos-auth-gate .auth-brand{display:flex;align-items:center;gap:14px}
+.lifeos-auth-gate .auth-logo{width:62px;height:62px;border:1px solid #3a506d;border-radius:19px;background:#25364d;display:grid;place-items:center;flex-shrink:0}
+.lifeos-auth-gate .auth-brand-name{font-size:29px;letter-spacing:-.8px;font-weight:650;color:#f7f9fc}
+.lifeos-auth-gate .auth-brand-kicker{font-size:9px;letter-spacing:2px;color:#9daec4;margin-top:5px}
+.lifeos-auth-gate .auth-brand-copy{margin:48px 0 30px}
+.lifeos-auth-gate .auth-eyebrow,.lifeos-auth-gate .auth-form-eyebrow{font-size:10px;font-weight:700;letter-spacing:2px;color:#91b8ff;margin:0 0 18px}
+.lifeos-auth-gate .auth-brand-copy h1{font-size:clamp(36px,4.3vw,56px);line-height:1.08;letter-spacing:-1.8px;font-weight:650;margin:0 0 20px;color:#f5f7fb}
+.lifeos-auth-gate .auth-brand-copy h1 span{color:#91b8ff}
+.lifeos-auth-gate .auth-lead{font-size:15px;line-height:1.8;color:#aab5c5;max-width:390px;margin:0}
+.lifeos-auth-gate .auth-feature-list{display:grid;gap:18px;margin-top:auto}
+.lifeos-auth-gate .auth-feature{display:flex;align-items:center;gap:13px}
+.lifeos-auth-gate .auth-feature-icon{width:36px;height:36px;border:1px solid #33465f;border-radius:11px;background:#222f40;color:#9fc0ff;display:grid;place-items:center;font-size:17px;flex-shrink:0}
+.lifeos-auth-gate .auth-feature b,.lifeos-auth-gate .auth-trust-list b{display:block;font-size:13px;font-weight:600;color:#e7edf6}
+.lifeos-auth-gate .auth-feature small,.lifeos-auth-gate .auth-trust-list small{display:block;font-size:11px;color:#8f9bad;margin-top:3px}
+.lifeos-auth-gate .auth-brand-footer{font-size:12px;color:#7f8ea3;margin:38px 0 0}
+.lifeos-auth-gate .auth-form-panel{padding:clamp(22px,4vw,52px);display:flex;flex-direction:column;justify-content:center;align-items:center;background:#15181d}
+.lifeos-auth-gate .auth-form-card{width:100%;max-width:370px;border:1px solid #303743;border-radius:22px;background:#1d222a;padding:clamp(24px,3.5vw,38px);box-shadow:0 16px 48px rgba(0,0,0,.16)}
+.lifeos-auth-gate .auth-form-mark{width:50px;height:50px;border-radius:15px;background:#27374d;border:1px solid #3a506d;display:grid;place-items:center;margin-bottom:28px}
+.lifeos-auth-gate .auth-form-eyebrow{margin-bottom:9px;color:#9dbbfa}
+.lifeos-auth-gate .auth-form-card h2{font-size:28px;letter-spacing:-.7px;line-height:1.2;margin:0;color:#f5f7fb;font-weight:650}
+.lifeos-auth-gate .auth-form-description{font-size:13px;line-height:1.7;color:#a5afbd;margin:12px 0 26px}
+.lifeos-auth-gate #googleSignIn.auth-google-button{width:100%;min-height:50px;display:flex;align-items:center;justify-content:center;gap:11px;border:1px solid #dce4f0;border-radius:12px;padding:12px 14px;background:#f5f7fb;color:#172033;font:600 14px Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;cursor:pointer;transition:transform .18s ease,box-shadow .18s ease,background .18s ease}
+.lifeos-auth-gate #googleSignIn.auth-google-button:hover{background:#fff;box-shadow:0 7px 22px rgba(86,137,220,.2);transform:translateY(-1px)}
+.lifeos-auth-gate #googleSignIn.auth-google-button:active{transform:translateY(0)}
+.lifeos-auth-gate .google-g{font-weight:800;font-size:18px;color:#4285f4}
+.lifeos-auth-gate .auth-button-arrow{margin-left:auto;color:#53647c;font-size:18px}
+.lifeos-auth-gate .auth-divider{display:flex;align-items:center;gap:12px;margin:26px 0 20px}
+.lifeos-auth-gate .auth-divider span{height:1px;background:#303743;flex:1}
+.lifeos-auth-gate .auth-divider small{font-size:9px;letter-spacing:1.4px;color:#7f8b9d;white-space:nowrap}
+.lifeos-auth-gate .auth-trust-list{display:grid;gap:16px}
+.lifeos-auth-gate .auth-trust-list>div{display:flex;align-items:center;gap:12px}
+.lifeos-auth-gate .auth-trust-icon{width:34px;height:34px;display:grid;place-items:center;border-radius:10px;background:#253144;color:#9fc0ff;font-size:20px;flex-shrink:0}
+.lifeos-auth-gate .auth-message{font-size:11px;line-height:1.6;color:#7f8b9d;margin:22px 0 0;text-align:center}
+.lifeos-auth-gate .auth-form-footer{font-size:11px;color:#6f7c8e;margin:24px 0 0;text-align:center}
+@media(max-width:760px){#authGate.lifeos-auth-gate{padding:0;align-items:flex-start}.lifeos-auth-gate .auth-split{width:100%;min-height:100%;grid-template-columns:1fr;border:0;border-radius:0;box-shadow:none}.lifeos-auth-gate .auth-brand-panel{padding:28px 24px 24px;border-right:0;border-bottom:1px solid #2b323d}.lifeos-auth-gate .auth-logo{width:48px;height:48px;border-radius:15px}.lifeos-auth-gate .auth-logo svg{width:35px;height:35px}.lifeos-auth-gate .auth-brand-name{font-size:24px}.lifeos-auth-gate .auth-brand-copy{margin:28px 0 20px}.lifeos-auth-gate .auth-brand-copy h1{font-size:36px;letter-spacing:-1px;margin-bottom:12px}.lifeos-auth-gate .auth-eyebrow{margin-bottom:11px}.lifeos-auth-gate .auth-lead{font-size:13px;line-height:1.65}.lifeos-auth-gate .auth-feature-list{grid-template-columns:1fr 1fr;gap:14px 10px}.lifeos-auth-gate .auth-feature-icon{width:31px;height:31px;border-radius:9px}.lifeos-auth-gate .auth-feature b{font-size:11px}.lifeos-auth-gate .auth-feature small{font-size:10px}.lifeos-auth-gate .auth-brand-footer{display:none}.lifeos-auth-gate .auth-form-panel{padding:24px 20px 34px}.lifeos-auth-gate .auth-form-card{max-width:480px;padding:24px;border-radius:18px}.lifeos-auth-gate .auth-form-mark{display:none}.lifeos-auth-gate .auth-form-card h2{font-size:24px}.lifeos-auth-gate .auth-form-description{margin:8px 0 20px}.lifeos-auth-gate .auth-divider{margin:20px 0 16px}}
+@media(max-width:380px){.lifeos-auth-gate .auth-brand-panel{padding:22px 18px}.lifeos-auth-gate .auth-brand-copy h1{font-size:31px}.lifeos-auth-gate .auth-feature-list{gap:12px 8px}.lifeos-auth-gate .auth-form-panel{padding:20px 14px 28px}.lifeos-auth-gate .auth-form-card{padding:20px}}
+@media(prefers-reduced-motion:reduce){.lifeos-auth-gate #googleSignIn.auth-google-button{transition:none}}
+</style>
 <div class="app">
 <aside class="sidebar" id="sidebar"><div class="brand"><div class="logo">L</div><div class="brand-copy"><b>LifeOS</b><small>Personal command centre</small></div></div>
 <div class="label">Overview</div><button class="nav active" data-page="home"><span class="ico">⌂</span><span>Dashboard</span></button>
