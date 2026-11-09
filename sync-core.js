@@ -4,7 +4,7 @@
   if(typeof module==='object'&&module.exports)module.exports=api;
   else root.LifeOSSyncCore=api;
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
-  function createRecordId(now=Date.now(),random=Math.random){
+  function createRecordId(random=Math.random){
     const sample=random();
     if(!Number.isFinite(sample)||sample<0||sample>=1)throw new Error('Invalid record ID entropy');
     const id=Math.max(1,Math.floor(sample*Number.MAX_SAFE_INTEGER));
