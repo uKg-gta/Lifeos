@@ -1853,7 +1853,13 @@ async function doPush(){
     conflict.code='LIFEOS_REVISION_CONFLICT';conflict.remote=remote;throw conflict;
   }
   baseRevision=result.newRevision;baseStamp=null;
-  lastCloudPayload=ser;markClean(ser);retryCount=0;clearConflictActions();pendingCloudConflict=null;
+  lastCloudPayload=ser;
+  if(pendingCloudConflict&&Number(pendingCloudConflict.revision)>baseRevision){
+    dirty=true;
+    const conflict=new Error('A second device saved again while this save was completing.');
+    conflict.code='LIFEOS_REVISION_CONFLICT';conflict.remote=pendingCloudConflict;throw conflict;
+  }
+  markClean(ser);retryCount=0;clearConflictActions();pendingCloudConflict=null;
   setSync('Synced just now · changes are saved to your cloud workspace.');
   const st=$('#accountStatus');if(st)st.textContent='Connected';
   return true;
