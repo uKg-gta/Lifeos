@@ -1899,7 +1899,7 @@ async function syncNow(){
 }
 
 function handleSignedOut(msg){
-  cloudReady=false;activating=false;clearTimeout(cloudTimer);cloudTimer=null;pendingCloudConflict=null;baseRevision=0;
+  cloudReady=false;activating=false;clearTimeout(cloudTimer);cloudTimer=null;pendingCloudConflict=null;baseRevision=0;clearConflictActions();
   if(window.__lifeosChannel&&supabase){supabase.removeChannel(window.__lifeosChannel);window.__lifeosChannel=null}
   cloudUser=null;window.__lifeosCloudLoaded=false;
   $('#authGate').style.display='flex';$('#authMessage').textContent=msg||'Your session ended. Sign in again to continue.';
@@ -1946,7 +1946,7 @@ async function activateSession(session){
       if(cached&&meta.dirty){
         s=cached.ws;prefs=cached.pr;baseRevision=Number(meta.revision)||0;baseStamp=meta.stamp||null;
         dirty=true;lastCloudPayload='';
-        if(baseRevision===remoteRevision)status='Restored unsynced changes from this device.';
+        if(!window.LifeOSSyncCore.hasRevisionConflict(baseRevision,remoteRevision))status='Restored unsynced changes from this device.';
         else{status='A newer cloud copy exists. Your local changes are preserved; resolve the sync conflict below.';pendingCloudConflict=remote;}
       }else{
         s=rws;prefs=rpr;baseRevision=remoteRevision;baseStamp=remote.updated_at||null;
