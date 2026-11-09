@@ -1787,14 +1787,14 @@ async function fetchRemote(){
 }
 function clearConflictActions(){
   const el=$('#syncConflictActions');
-  if(el){el.hidden=true;el.innerHTML=''}
+  if(el){el.hidden=true;el.style.display='none';el.innerHTML=''}
 }
 function showCloudConflict(row){
-  pendingCloudConflict=row||null;
+  pendingCloudConflict=row||{_deleted:true,revision:0};
   setSync('Sync conflict: another device has a newer workspace. Both versions are preserved; choose how to continue.');
   const el=$('#syncConflictActions');
   if(!el)return;
-  el.hidden=false;
+  el.hidden=false;el.style.display='block';
   el.innerHTML='<div class="tiny muted">Your local changes have not been uploaded or discarded.</div><div class="setting-control"><button class="btn" id="conflictExport">Download local backup</button><button class="btn" id="conflictLoadCloud">Use cloud version</button><button class="btn danger-btn" id="conflictKeepLocal">Replace cloud with this device</button></div>';
   $('#conflictExport').onclick=()=>exportData();
   $('#conflictLoadCloud').onclick=()=>resolveCloudConflict('cloud');
@@ -1867,6 +1867,7 @@ async function runPushLoop(){
   return true;
 }
 async function pushCloud(){
+  clearTimeout(cloudTimer);cloudTimer=null;
   if(!supabase||!cloudUser||!cloudReady)return false;
   if(pendingCloudConflict)return false;
   if(pushPromise){pushQueued=true;return pushPromise}
@@ -1969,7 +1970,7 @@ async function activateSession(session){
         if(window.__lifeosChannel){await supabase.removeChannel(window.__lifeosChannel);window.__lifeosChannel=null}
         const {error}=await supabase.auth.signOut();
         if(error){cloudReady=true;toast('Could not sign out: '+error.message);return}
-        clearLocalCache();s=seed();prefs=defaultPrefs();baseStamp=null;lastCloudPayload='';dirty=false;
+        clearLocalCache();s=seed();prefs=defaultPrefs();baseStamp=null;baseRevision=0;lastCloudPayload='';dirty=false;pendingCloudConflict=null;
         cloudUser=null;window.__lifeosCloudLoaded=false;
         try{applyPrefs();render()}catch(e){}
         $('#authGate').style.display='flex';$('#authMessage').textContent='You have signed out of LifeOS.';
