@@ -4,15 +4,16 @@ const assert=require('node:assert/strict');
 const core=require('../sync-core');
 
 test('record IDs are numeric safe integers compatible with existing UI lookups',()=>{
-  const id=core.createRecordId(1794200000000,()=>0.314159);
+  const id=core.createRecordId(()=>0.314159);
   assert.equal(Number.isSafeInteger(id),true);
   assert.equal(id>=0,true);
   assert.equal(typeof id,'number');
+  assert.throws(()=>core.createRecordId(()=>1),/Invalid record ID entropy/);
 });
 
 test('record IDs vary for distinct entropy within the same second',()=>{
-  const a=core.createRecordId(1794200000000,()=>0.1);
-  const b=core.createRecordId(1794200000000,()=>0.9);
+  const a=core.createRecordId(()=>0.1);
+  const b=core.createRecordId(()=>0.9);
   assert.notEqual(a,b);
 });
 
