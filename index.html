@@ -1806,6 +1806,9 @@ async function resolveCloudConflict(choice){
       exportData();
       try{
         const remote=await fetchRemote();
+        if(pendingCloudConflict&&Number(pendingCloudConflict.revision)>Number(remote?.revision||0)){
+          showCloudConflict(pendingCloudConflict);return;
+        }
         s=normalizeWorkspace(remote?.data?.workspace||{});
         prefs=mergePrefs(defaultPrefs(),remote?.data?.preferences);
         baseRevision=Number(remote?.revision)||0;baseStamp=remote?.updated_at||null;
