@@ -1944,7 +1944,7 @@ async function activateSession(session){
       const rws=normalizeWorkspace(remote.data.workspace),rpr=mergePrefs(defaultPrefs(),remote.data.preferences);
       const remoteRevision=Number(remote.revision)||0;
       if(cached&&meta.dirty){
-        s=cached.ws;prefs=cached.pr;baseRevision=Number(meta.revision)||0;baseStamp=meta.stamp||null;
+        s=cached.ws;prefs=cached.pr;const cachedRevision=meta.revision==null?NaN:Number(meta.revision);baseRevision=Number.isSafeInteger(cachedRevision)?cachedRevision:(meta.stamp&&stampMs(meta.stamp)===stampMs(remote.updated_at)?remoteRevision:0);baseStamp=meta.stamp||null;
         dirty=true;lastCloudPayload='';
         if(!window.LifeOSSyncCore.hasRevisionConflict(baseRevision,remoteRevision))status='Restored unsynced changes from this device.';
         else{status='A newer cloud copy exists. Your local changes are preserved; resolve the sync conflict below.';pendingCloudConflict=remote;}
