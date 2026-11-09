@@ -5,10 +5,10 @@
   else root.LifeOSSyncCore=api;
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
   function createRecordId(now=Date.now(),random=Math.random){
-    const seconds=Math.floor(now/1000);
-    const entropy=Math.floor(random()*1000000);
-    const id=seconds*1000000+entropy;
-    if(!Number.isSafeInteger(id)||id<0)throw new Error('Unable to create a safe record ID');
+    const sample=random();
+    if(!Number.isFinite(sample)||sample<0||sample>=1)throw new Error('Invalid record ID entropy');
+    const id=Math.max(1,Math.floor(sample*Number.MAX_SAFE_INTEGER));
+    if(!Number.isSafeInteger(id))throw new Error('Unable to create a safe record ID');
     return id;
   }
   function parseSaveResult(data){
