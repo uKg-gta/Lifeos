@@ -1259,7 +1259,8 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 </style>
 </head>
 <body>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0"></script>
+<script src="./sync-core.js"></script>
 <div id="authGate" class="lifeos-auth-gate">
   <div class="auth-split">
     <section class="auth-brand-panel" aria-label="About LifeOS">
@@ -1690,7 +1691,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 <div class="card setting-section"><div class="head"><div><div class="cardtitle">Workspace</div><div class="tiny muted">Keep navigation relevant without deleting anything</div></div></div><div class="settingrow"><div><b>Sidebar modules</b><p>Dashboard and Settings always stay visible. Hiding a module never deletes its records.</p></div></div><div class="settings-options" id="moduleToggles"></div><div class="head" style="margin-top:18px"><div class="cardtitle">Dashboard summaries</div></div><div class="settings-options"><label><input type="checkbox" id="summaryTasks"> Today's tasks</label><label><input type="checkbox" id="summaryStudy"> Study summary</label><label><input type="checkbox" id="summaryHabits"> Today's habits</label></div></div>
 <div class="card setting-section"><div class="head"><div><div class="cardtitle">Time & planning</div><div class="tiny muted">Date and calendar preferences</div></div></div><div class="settings-options"><div class="field"><label>Week starts</label><input class="input" value="Monday" disabled><div class="tiny muted">Monday is used throughout LifeOS.</div></div><div class="field"><label for="prefClock">Clock format</label><select id="prefClock"><option value="12">12-hour</option><option value="24">24-hour</option></select></div><div class="field"><label for="prefDate">Date format</label><select id="prefDate"><option value="dmy">DD/MM/YYYY</option><option value="mdy">MM/DD/YYYY</option><option value="iso">YYYY-MM-DD</option></select></div></div></div>
 <div class="card setting-section"><div class="head"><div><div class="cardtitle">Cloud storage</div><div class="tiny muted">Your workspace syncs to your signed-in account</div></div><span class="pill" id="cloudStorageBadge">Cloud</span></div><p class="small muted">LifeOS saves workspace records and preferences to your private cloud workspace. Sign in with the same Google account on another device to continue where you left off.</p><div class="notice">Keep your Google account secure. Cloud sync requires an internet connection; recent edits may wait until connectivity returns.</div><div class="settingrow"><div><b>Reset workspace</b><p>Permanently clear records in your cloud workspace on all devices.</p></div><button class="btn danger-btn" id="resetBtn">Reset workspace</button></div></div></section>
-<section class="page" id="page-profile"><div class="heading"><div><div class="eyebrow">Personal · Account</div><h1>Profile & account</h1><p>Your personal identity and account controls, separate from workspace settings.</p></div></div><div class="card setting-section"><div class="head"><div><div class="cardtitle">Your profile</div><div class="tiny muted">Stored on this browser in the prototype.</div></div></div><div class="profile-editor"><div class="avatar" id="profilePageAvatar" style="width:72px;height:72px;font-size:22px">UG</div><div class="profile-fields"><div class="field"><label for="profileNameInput">Display name</label><input id="profileNameInput" class="input" maxlength="60" placeholder="Your name"></div><div class="field"><label for="profileMottoInput">Personal motto (optional)</label><input id="profileMottoInput" class="input" maxlength="120" placeholder="A short guiding principle"></div></div></div><div class="settingrow"><div><b>Profile picture</b><p>Upload a picture or choose a built-in avatar. Images are resized and compressed before saving.</p></div><div class="setting-control"><label class="btn profile-upload-label" for="profilePictureInput">Choose photo</label><input type="file" id="profilePictureInput" accept="image/*" style="width:1px;height:1px;position:absolute;opacity:0;overflow:hidden" aria-label="Choose profile picture"><button class="btn" id="profileRemovePicture">Remove picture</button></div></div><div class="avatar-choices" id="profileAvatarChoices"><button class="avatar-choice" data-profile-avatar="UG">UG</button><button class="avatar-choice" data-profile-avatar="◉">◉</button><button class="avatar-choice" data-profile-avatar="✦">✦</button><button class="avatar-choice" data-profile-avatar="🌿">🌿</button><button class="avatar-choice" data-profile-avatar="☼">☼</button></div><button class="primary" id="saveProfilePage" style="margin-top:14px">Save profile</button></div><div class="card setting-section"><div class="head"><div><div class="cardtitle">Login & account</div><div class="tiny muted">Future account features</div></div><span class="pill" id="accountStatus">Connecting…</span></div><p class="small muted" id="accountEmail">Sign in with Google to sync this workspace across devices.</p><div class="settingrow"><div><b>Cloud sync</b><p id="syncStatus">Waiting for account sign-in.</p></div><button class="btn" id="signOutBtn">Sign out</button></div></div></section>
+<section class="page" id="page-profile"><div class="heading"><div><div class="eyebrow">Personal · Account</div><h1>Profile & account</h1><p>Your personal identity and account controls, separate from workspace settings.</p></div></div><div class="card setting-section"><div class="head"><div><div class="cardtitle">Your profile</div><div class="tiny muted">Stored on this browser in the prototype.</div></div></div><div class="profile-editor"><div class="avatar" id="profilePageAvatar" style="width:72px;height:72px;font-size:22px">UG</div><div class="profile-fields"><div class="field"><label for="profileNameInput">Display name</label><input id="profileNameInput" class="input" maxlength="60" placeholder="Your name"></div><div class="field"><label for="profileMottoInput">Personal motto (optional)</label><input id="profileMottoInput" class="input" maxlength="120" placeholder="A short guiding principle"></div></div></div><div class="settingrow"><div><b>Profile picture</b><p>Upload a picture or choose a built-in avatar. Images are resized and compressed before saving.</p></div><div class="setting-control"><label class="btn profile-upload-label" for="profilePictureInput">Choose photo</label><input type="file" id="profilePictureInput" accept="image/*" style="width:1px;height:1px;position:absolute;opacity:0;overflow:hidden" aria-label="Choose profile picture"><button class="btn" id="profileRemovePicture">Remove picture</button></div></div><div class="avatar-choices" id="profileAvatarChoices"><button class="avatar-choice" data-profile-avatar="UG">UG</button><button class="avatar-choice" data-profile-avatar="◉">◉</button><button class="avatar-choice" data-profile-avatar="✦">✦</button><button class="avatar-choice" data-profile-avatar="🌿">🌿</button><button class="avatar-choice" data-profile-avatar="☼">☼</button></div><button class="primary" id="saveProfilePage" style="margin-top:14px">Save profile</button></div><div class="card setting-section"><div class="head"><div><div class="cardtitle">Login & account</div><div class="tiny muted">Future account features</div></div><span class="pill" id="accountStatus">Connecting…</span></div><p class="small muted" id="accountEmail">Sign in with Google to sync this workspace across devices.</p><div class="settingrow"><div><b>Cloud sync</b><p id="syncStatus">Waiting for account sign-in.</p><div id="syncConflictActions" class="setting-help" hidden></div></div><button class="btn" id="signOutBtn">Sign out</button></div></div></section>
 </main></div>
 <nav class="bottomnav" aria-label="Mobile navigation"><button class="active" data-page="home"><span>⌂</span>Dashboard</button><button data-page="tasks"><span>☷</span>Tasks</button><button data-page="study"><span>▤</span>Study</button><button data-page="focus"><span>◷</span>Focus</button><button id="moreBtn"><span>•••</span>More</button><div class="moremenu" id="moreMenu"><button data-page="habits">◉ &nbsp; Habits & routines</button><button data-page="projects">◇ &nbsp; Goals</button><button data-page="library">▧ &nbsp; Library</button><button data-page="notes">✎ &nbsp; Notes</button><button data-page="finance">₹ &nbsp; Finance</button><button data-page="calendar">▦ &nbsp; Calendar</button><button data-page="settings">⚙ &nbsp; Settings</button><button data-page="profile">◉ &nbsp; Profile & account</button></div></nav>
 <div class="modalback" id="modalBack" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="modal"><div class="modalhead"><h2 id="modalTitle">Quick add</h2><button class="close" id="modalClose" aria-label="Close">×</button></div><div id="modalBody"></div><div class="modalfoot"><button class="btn" id="modalCancel">Cancel</button><button class="primary" id="modalSave">Save</button></div></div></div><div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -1701,19 +1702,20 @@ const now=new Date(), dateLabel=(d=new Date())=>{let o=prefs.dateFormat||'dmy';i
 const seed=()=>({tasks:[],habits:[],routines:[],notes:[],sessions:[],syllabus:[],transactions:[],budgets:[],resources:[],goals:[],projects:[],investments:[],assets:[],liabilities:[],exams:[],subjects:[],studyToday:0,studyWeek:0,timer:{mode:'countdown',duration:1500,remaining:1500,running:false,startedAt:null,paused:false}});
 let s=seed(), prefs={theme:'dark',accent:'amber',density:'comfortable',font:'default',name:'',motto:'',avatar:'UG',picture:'',hiddenModules:[],summaries:{tasks:true,study:true,habits:true},weekStart:1,clock:'12',dateFormat:'dmy'}, pendingBackup=null, taskView='all',bookView='cards',weekOffset=0,financeMonth=null,tick=null,toastTimer=null,modalSaveFn=null;
 const weight=p=>p==='High'?3:p==='Low'?1:2, todayTasks=()=>s.tasks.filter(t=>t.date==='today'), score=()=>{let a=todayTasks(),total=a.reduce((n,t)=>n+weight(t.priority),0);return total?Math.round(a.filter(t=>t.status==='done').reduce((n,t)=>n+weight(t.priority),0)/total*100):null}, mins=m=>{m=Math.max(0,Math.round(m||0));return m>=60?`${Math.floor(m/60)}h ${m%60}m`:`${m}m`}, money=n=>{n=Math.round(Number(n)||0);return (n<0?'−':'')+'₹'+Math.abs(n).toLocaleString('en-IN')}, fmtsec=n=>`${String(Math.floor(Math.max(0,n)/60)).padStart(2,'0')}:${String(Math.max(0,n)%60).padStart(2,'0')}`;
-let supabase=null, cloudUser=null, cloudReady=false, cloudTimer=null, applyingRemote=false, lastCloudPayload='', baseStamp=null, pushingStamp=null, pushing=false, pushQueued=false, activating=false, retryTimer=null, retryCount=0, dirty=false, lastDay=dayKey();
+let supabase=null, cloudUser=null, cloudReady=false, cloudTimer=null, applyingRemote=false, lastCloudPayload='', baseStamp=null, baseRevision=0, pushingStamp=null, pushing=false, pushQueued=false, pushPromise=null, pendingCloudConflict=null, activating=false, retryTimer=null, retryCount=0, dirty=false, lastDay=dayKey();
 /* ===== Data hygiene, sync and auth (rewritten) ===== */
 const META_KEY='lifeos-sync-meta',CACHE_KEYS=['lifeos-review-v2','lifeos-review-prefs'];
 const defaultPrefs=()=>({theme:'dark',accent:'amber',density:'comfortable',font:'default',name:'',motto:'',avatar:'UG',picture:'',hiddenModules:[],summaries:{tasks:true,study:true,habits:true},weekStart:1,clock:'12',dateFormat:'dmy'});
 const num=(v,d=0)=>{v=Number(v);return Number.isFinite(v)?v:d};
 const str=(v,d='',n=500)=>typeof v==='string'?v.slice(0,n):(typeof v==='number'&&Number.isFinite(v)?String(v):d);
 const pick=(v,list,d)=>list.includes(v)?v:d;
+const newRecordId=()=>window.LifeOSSyncCore.createRecordId();
 const objs=a=>Array.isArray(a)?a.filter(x=>x&&typeof x==='object'&&!Array.isArray(x)):[];
 const dayRe=/^\d{4}-\d{2}-\d{2}$/;
 const safePic=p=>typeof p==='string'&&p.length<400000&&/^data:image\/(?:jpeg|png|webp|gif);base64,[A-Za-z0-9+\/=]+$/.test(p)?p:'';
 const stampMs=v=>{const t=new Date(v).getTime();return Number.isFinite(t)?t:0};
 function addDays(n,from=new Date()){const d=new Date(from);d.setDate(d.getDate()+n);return d}
-function withIds(list){const seen=new Set();let max=0;list.forEach(x=>{const n=Number(x.id);if(x.id!=null&&x.id!==''&&Number.isFinite(n)&&n>max)max=n});return list.map(x=>{const n=Number(x.id);const ok=x.id!=null&&x.id!==''&&Number.isFinite(n)&&!seen.has(n);const id=ok?n:++max;seen.add(id);return {...x,id}})}
+function withIds(list){const seen=new Set();return list.map(x=>{const n=Number(x.id);const ok=x.id!=null&&x.id!==''&&Number.isSafeInteger(n)&&n>=0&&!seen.has(n);let id=ok?n:newRecordId();while(seen.has(id))id=newRecordId();seen.add(id);return {...x,id}})}
 function normalizePrefs(p){
   const d=defaultPrefs();p=p&&typeof p==='object'?p:{};const sm=p.summaries&&typeof p.summaries==='object'?p.summaries:{};
   const word=(v,def)=>typeof v==='string'&&/^[a-z-]{1,20}$/.test(v)?v:def;
@@ -1766,69 +1768,137 @@ function writeCache(){try{localStorage.setItem('lifeos-review-v2',JSON.stringify
 function setSync(t){const el=$('#syncStatus');if(el)el.textContent=t}
 function save(){
   if(!writeCache())toast('Browser cache is full. Cloud sync may still work.');
-  if(cloudUser&&!applyingRemote){dirty=true;writeMeta({user:cloudUser.id,dirty:true})}
-  if(cloudReady&&!applyingRemote){clearTimeout(cloudTimer);cloudTimer=setTimeout(()=>{cloudTimer=null;pushCloud()},650);setSync('Changes waiting to sync…')}
+  if(cloudUser&&!applyingRemote){dirty=true;writeMeta({user:cloudUser.id,dirty:true,revision:baseRevision})}
+  if(cloudReady&&!applyingRemote&&!pendingCloudConflict){clearTimeout(cloudTimer);cloudTimer=setTimeout(()=>{cloudTimer=null;pushCloud()},650);setSync('Changes waiting to sync…')}
 }
 function load(){if(window.__lifeosCloudLoaded)return;try{let v=JSON.parse(localStorage.getItem('lifeos-review-v2'));if(v&&v.tasks&&v.habits)s=normalizeWorkspace(v)}catch(e){}try{let p=JSON.parse(localStorage.getItem('lifeos-review-prefs'));if(p&&typeof p==='object')prefs=mergePrefs(prefs,p)}catch(e){}}
 
 /* ----- cloud sync (optimistic concurrency + merge on conflict) ----- */
-function markClean(ser){if(ser===JSON.stringify({workspace:s,preferences:prefs})){dirty=false;if(cloudUser)writeMeta({user:cloudUser.id,dirty:false,stamp:baseStamp})}}
-async function fetchRemote(){const {data,error}=await supabase.from('lifeos_workspace').select('data,updated_at').eq('user_id',cloudUser.id).maybeSingle();if(error)throw error;return data&&data.data?data:null}
-function upsertRow(payload,stamp){return supabase.from('lifeos_workspace').upsert({user_id:cloudUser.id,data:payload,updated_at:stamp},{onConflict:'user_id'}).select('updated_at')}
-function applyRemoteRow(row,fromPush){
-  if(!row||!row.data||!cloudUser)return;
-  const rs=stampMs(row.updated_at);
-  if(!fromPush&&rs&&(rs===stampMs(baseStamp)||rs===stampMs(pushingStamp)||rs<stampMs(baseStamp)))return; // our own write, or older
-  const rws=normalizeWorkspace(row.data.workspace),rpr=mergePrefs(defaultPrefs(),row.data.preferences);
-  const hasLocal=!!fromPush||dirty||!!cloudTimer||pushing;
-  applyingRemote=true;
-  try{
-    if(hasLocal){s=mergeWorkspace(rws,s);prefs=mergePrefs(rpr,prefs)}
-    else{s=rws;prefs=rpr;lastCloudPayload=JSON.stringify({workspace:s,preferences:prefs})}
-    baseStamp=row.updated_at;writeCache();writeMeta({user:cloudUser.id,stamp:baseStamp});
-  }finally{applyingRemote=false}
-  applyPrefs();render();
-  if(fromPush)return;
-  if(hasLocal)save();else setSync('Updated from another device.');
+function markClean(ser){
+  if(ser===JSON.stringify({workspace:s,preferences:prefs})){
+    dirty=false;
+    if(cloudUser)writeMeta({user:cloudUser.id,dirty:false,revision:baseRevision,stamp:baseStamp});
+  }
 }
-async function doPush(depth){
+async function fetchRemote(){
+  const {data,error}=await supabase.from('lifeos_workspace').select('data,updated_at,revision').eq('user_id',cloudUser.id).maybeSingle();
+  if(error)throw error;
+  return data&&data.data?data:null;
+}
+function clearConflictActions(){
+  const el=$('#syncConflictActions');
+  if(el){el.hidden=true;el.innerHTML=''}
+}
+function showCloudConflict(row){
+  pendingCloudConflict=row||null;
+  setSync('Sync conflict: another device has a newer workspace. Both versions are preserved; choose how to continue.');
+  const el=$('#syncConflictActions');
+  if(!el)return;
+  el.hidden=false;
+  el.innerHTML='<div class="tiny muted">Your local changes have not been uploaded or discarded.</div><div class="setting-control"><button class="btn" id="conflictExport">Download local backup</button><button class="btn" id="conflictLoadCloud">Use cloud version</button><button class="btn danger-btn" id="conflictKeepLocal">Replace cloud with this device</button></div>';
+  $('#conflictExport').onclick=()=>exportData();
+  $('#conflictLoadCloud').onclick=()=>resolveCloudConflict('cloud');
+  $('#conflictKeepLocal').onclick=()=>resolveCloudConflict('local');
+}
+async function resolveCloudConflict(choice){
+  if(choice==='cloud'){
+    inPageConfirm('Use cloud version','A backup of this device will be downloaded first. The latest cloud workspace will then replace the local copy.',async()=>{
+      exportData();
+      try{
+        const remote=await fetchRemote();
+        s=normalizeWorkspace(remote?.data?.workspace||{});
+        prefs=mergePrefs(defaultPrefs(),remote?.data?.preferences);
+        baseRevision=Number(remote?.revision)||0;baseStamp=remote?.updated_at||null;
+        lastCloudPayload=JSON.stringify({workspace:s,preferences:prefs});dirty=false;pendingCloudConflict=null;
+        writeCache();writeMeta({user:cloudUser.id,revision:baseRevision,stamp:baseStamp,dirty:false});
+        clearConflictActions();applyPrefs();render();setSync('Loaded the latest cloud workspace. Local backup downloaded.');
+      }catch(e){toast('Could not load the cloud copy: '+(e.message||'check your connection'))}
+    });
+    return;
+  }
+  if(choice==='local'){
+    inPageConfirm('Replace cloud workspace','This will replace the latest cloud workspace with the copy on this device. A local backup will be downloaded first. Continue only if this device has the version you want to keep.',async()=>{
+      exportData();
+      try{
+        const remote=await fetchRemote();
+        baseRevision=Number(remote?.revision)||0;baseStamp=remote?.updated_at||null;
+        pendingCloudConflict=null;clearConflictActions();dirty=true;
+        writeMeta({user:cloudUser.id,revision:baseRevision,dirty:true});
+        const ok=await pushCloud();
+        if(!ok&&!pendingCloudConflict)setSync('Cloud replacement was not confirmed. Your local copy remains available.');
+      }catch(e){showCloudConflict(await fetchRemote().catch(()=>null));toast('Could not prepare the cloud replacement: '+(e.message||'check your connection'))}
+    },true);
+  }
+}
+function applyRemoteRow(row){
+  if(!row||!row.data||!cloudUser)return;
+  const revision=Number(row.revision)||0;
+  if(revision<=baseRevision)return;
+  if(dirty||!!cloudTimer||pushing||!!pushPromise){showCloudConflict(row);return}
+  s=normalizeWorkspace(row.data.workspace);prefs=mergePrefs(defaultPrefs(),row.data.preferences);
+  baseRevision=revision;baseStamp=row.updated_at||null;
+  lastCloudPayload=JSON.stringify({workspace:s,preferences:prefs});dirty=false;
+  writeCache();writeMeta({user:cloudUser.id,revision:baseRevision,stamp:baseStamp,dirty:false});
+  applyPrefs();render();setSync('Updated from another device.');
+}
+async function doPush(){
   const payload={workspace:s,preferences:prefs},ser=JSON.stringify(payload);
   if(ser===lastCloudPayload){markClean(ser);return true}
-  const stamp=new Date().toISOString();pushingStamp=stamp;
-  let res;
-  if(baseStamp){
-    res=await supabase.from('lifeos_workspace').update({data:payload,updated_at:stamp}).eq('user_id',cloudUser.id).eq('updated_at',baseStamp).select('updated_at');
-    if(res.error)throw res.error;
-    if(!(res.data&&res.data.length)){
-      // Nothing matched: another device saved first (or the row vanished).
-      const remote=await fetchRemote();
-      if(remote&&depth<2){applyRemoteRow(remote,true);toast('Merged changes made on another device.');return doPush(depth+1)}
-      if(remote)throw new Error('Another device keeps changing this workspace. Try again in a moment.');
-      baseStamp=null;res=await upsertRow(payload,stamp);
-    }
-  }else res=await upsertRow(payload,stamp);
-  if(res.error)throw res.error;
-  baseStamp=(res.data&&res.data[0]&&res.data[0].updated_at)||stamp;
-  lastCloudPayload=ser;markClean(ser);retryCount=0;
-  setSync('Synced just now · changes are saved to your cloud workspace.');const st=$('#accountStatus');if(st)st.textContent='Connected';
+  const {data,error}=await supabase.rpc('save_lifeos_workspace',{p_data:payload,p_expected_revision:baseRevision});
+  if(error)throw error;
+  const result=window.LifeOSSyncCore.parseSaveResult(data);
+  if(!result.saved){
+    const remote=await fetchRemote();
+    const conflict=new Error('The cloud workspace changed after this device last loaded it.');
+    conflict.code='LIFEOS_REVISION_CONFLICT';conflict.remote=remote;throw conflict;
+  }
+  baseRevision=result.newRevision;baseStamp=null;
+  lastCloudPayload=ser;markClean(ser);retryCount=0;clearConflictActions();pendingCloudConflict=null;
+  setSync('Synced just now · changes are saved to your cloud workspace.');
+  const st=$('#accountStatus');if(st)st.textContent='Connected';
+  return true;
+}
+async function runPushLoop(){
+  do{
+    pushQueued=false;pushing=true;
+    try{await doPush()}
+    finally{pushing=false;pushingStamp=null}
+  }while(pushQueued||(dirty&&JSON.stringify({workspace:s,preferences:prefs})!==lastCloudPayload));
   return true;
 }
 async function pushCloud(){
-  if(!supabase||!cloudUser||!cloudReady)return true;
-  if(pushing){pushQueued=true;return true}
-  pushing=true;let ok=false;
-  try{ok=await doPush(0)}
-  catch(e){console.error('LifeOS cloud sync:',e);setSync('Sync paused: '+(e.message||'check connection and database setup')+' · will retry.');scheduleRetry()}
-  finally{pushing=false;pushingStamp=null}
-  if(pushQueued){pushQueued=false;return pushCloud()}
-  return ok;
+  if(!supabase||!cloudUser||!cloudReady)return false;
+  if(pendingCloudConflict)return false;
+  if(pushPromise){pushQueued=true;return pushPromise}
+  const task=(async()=>{
+    try{return await runPushLoop()}
+    catch(e){
+      if(e?.code==='LIFEOS_REVISION_CONFLICT'){showCloudConflict(e.remote);return false}
+      console.error('LifeOS cloud sync:',e);
+      setSync('Sync paused: '+(e.message||'check connection and database setup')+' · will retry.');
+      scheduleRetry();return false;
+    }
+  })();
+  pushPromise=task;
+  try{return await task}
+  finally{if(pushPromise===task)pushPromise=null}
 }
-function scheduleRetry(){retryCount++;clearTimeout(retryTimer);retryTimer=setTimeout(()=>{if(cloudReady&&dirty)pushCloud()},Math.min(60000,2000*Math.pow(2,Math.min(retryCount,5))))}
-function flushCloud(){if(!cloudReady)return;if(dirty||cloudTimer){clearTimeout(cloudTimer);cloudTimer=null;pushCloud()}}
-async function syncNow(){if(!cloudReady||!supabase||!cloudUser)return;try{const row=await fetchRemote();if(row)applyRemoteRow(row)}catch(e){console.warn('LifeOS refresh failed:',e)}}
+function scheduleRetry(){
+  retryCount++;clearTimeout(retryTimer);
+  retryTimer=setTimeout(()=>{if(cloudReady&&dirty&&!pendingCloudConflict)pushCloud()},Math.min(60000,2000*Math.pow(2,Math.min(retryCount,5))));
+}
+async function flushCloud(){
+  clearTimeout(cloudTimer);cloudTimer=null;
+  if(!cloudReady)return false;
+  return pushCloud();
+}
+async function syncNow(){
+  if(!cloudReady||!supabase||!cloudUser)return;
+  try{const row=await fetchRemote();if(row)applyRemoteRow(row)}catch(e){console.warn('LifeOS refresh failed:',e)}
+}
 
 function handleSignedOut(msg){
-  cloudReady=false;activating=false;clearTimeout(cloudTimer);cloudTimer=null;
+  cloudReady=false;activating=false;clearTimeout(cloudTimer);cloudTimer=null;pendingCloudConflict=null;baseRevision=0;
   if(window.__lifeosChannel&&supabase){supabase.removeChannel(window.__lifeosChannel);window.__lifeosChannel=null}
   cloudUser=null;window.__lifeosCloudLoaded=false;
   $('#authGate').style.display='flex';$('#authMessage').textContent=msg||'Your session ended. Sign in again to continue.';
@@ -1854,6 +1924,7 @@ async function startCloud(){
 async function activateSession(session){
   if(!supabase||!session?.user)return;
   const nextUser=session.user;
+  pendingCloudConflict=null;
   if(cloudUser?.id===nextUser.id&&(cloudReady||activating))return; // duplicate auth event
   activating=true;cloudReady=false;cloudUser=nextUser;
   $('#authGate').style.display='none';
@@ -1865,20 +1936,27 @@ async function activateSession(session){
     let remote=null,offline=false,status='';
     try{remote=await fetchRemote()}catch(e){if(!cached)throw e;offline=true;console.warn('LifeOS: starting offline',e)}
     if(offline){
-      s=cached.ws;prefs=cached.pr;baseStamp=meta.stamp||null;lastCloudPayload='';
+      s=cached.ws;prefs=cached.pr;baseStamp=meta.stamp||null;baseRevision=Number(meta.revision)||0;
+      dirty=!!meta.dirty;lastCloudPayload=dirty?'':JSON.stringify({workspace:s,preferences:prefs});
       status="Offline: showing this device's saved copy. Changes sync when you are back online.";
     }else if(remote){
       const rws=normalizeWorkspace(remote.data.workspace),rpr=mergePrefs(defaultPrefs(),remote.data.preferences);
-      baseStamp=remote.updated_at;
+      const remoteRevision=Number(remote.revision)||0;
       if(cached&&meta.dirty){
-        if(stampMs(meta.stamp)===stampMs(remote.updated_at)){s=cached.ws;prefs=cached.pr;status='Restored unsynced changes from this device.'}
-        else{s=mergeWorkspace(rws,cached.ws);prefs=mergePrefs(rpr,cached.pr);status='Merged unsynced changes from this device with your cloud workspace.'}
-        lastCloudPayload='';
-      }else{s=rws;prefs=rpr;lastCloudPayload=JSON.stringify({workspace:s,preferences:prefs});status='Cloud sync is active.'}
+        s=cached.ws;prefs=cached.pr;baseRevision=Number(meta.revision)||0;baseStamp=meta.stamp||null;
+        dirty=true;lastCloudPayload='';
+        if(baseRevision===remoteRevision)status='Restored unsynced changes from this device.';
+        else{status='A newer cloud copy exists. Your local changes are preserved; resolve the sync conflict below.';pendingCloudConflict=remote;}
+      }else{
+        s=rws;prefs=rpr;baseRevision=remoteRevision;baseStamp=remote.updated_at||null;
+        dirty=false;lastCloudPayload=JSON.stringify({workspace:s,preferences:prefs});status='Cloud sync is active.';
+      }
     }else{
-      s=cached?cached.ws:seed();prefs=cached?cached.pr:defaultPrefs();baseStamp=null;lastCloudPayload='';status='New private workspace created.';
+      s=cached?cached.ws:seed();prefs=cached?cached.pr:defaultPrefs();baseStamp=null;baseRevision=0;
+      dirty=!!(cached&&meta.dirty);lastCloudPayload='';
+      status=cached&&meta.dirty?'Restored unsynced local changes.':'New private workspace created.';
     }
-    writeCache();writeMeta({user:nextUser.id});
+    writeCache();writeMeta({user:nextUser.id,revision:baseRevision,dirty});
     cloudReady=true;
     $('#accountStatus').textContent=offline?'Offline':'Connected';
     $('#accountEmail').textContent=cloudUser.email||'Signed in with Google';
@@ -1896,14 +1974,12 @@ async function activateSession(session){
         try{applyPrefs();render()}catch(e){}
         $('#authGate').style.display='flex';$('#authMessage').textContent='You have signed out of LifeOS.';
       };
-      if(!ok){
-        inPageConfirm('Unsaved changes','Some changes could not be synced and will be lost if you sign out. Sign out anyway?',doSignOut,true);
-      }else{
-        await doSignOut();
-      }
+      if(!ok){toast('Sign-out paused: cloud save was not confirmed. Your local data is still here; resolve the sync conflict or retry before signing out.');return;}
+      await doSignOut();
     };
     setup();
-    if(!offline&&(!remote||lastCloudPayload===''))await pushCloud();
+    if(!offline&&(!remote||lastCloudPayload==='')&&!pendingCloudConflict)await pushCloud();
+    if(pendingCloudConflict)showCloudConflict(pendingCloudConflict);
     if(window.__lifeosChannel)supabase.removeChannel(window.__lifeosChannel);
     window.__lifeosChannel=supabase.channel('lifeos-workspace-sync')
       .on('postgres_changes',{event:'UPDATE',schema:'public',table:'lifeos_workspace',filter:'user_id=eq.'+cloudUser.id},payload=>{
@@ -2104,40 +2180,70 @@ function timerRender(){ensureTick();let t=s.timer,txt=fmtsec(timerSeconds());$('
 function timerTick(){if(!s.timer.running){clearInterval(tick);tick=null;return}timerRender();if(s.timer.mode==='countdown'&&timerSeconds()<=0)timerComplete()}
 function ensureTick(){if(tick||!s.timer.running)return;tick=setInterval(timerTick,500)}
 function timerStart(){let t=s.timer;if(t.running)return;if(t.mode==='countdown'&&t.remaining<=0)t.remaining=t.duration;t.startedAt=Date.now();t.running=true;t.paused=false;save();timerRender()}
-function logFocusSession(sec){let m=Math.max(1,Math.round(sec/60));s.sessions.unshift({id:Math.max(0,...s.sessions.map(x=>x.id))+1,subject:$('#timerSubject').value,topic:$('#timerTopic').value,date:dayKey(),minutes:m,type:'Study',exam:$('#examSelect').value});return m}
+function logFocusSession(sec){let m=Math.max(1,Math.round(sec/60));s.sessions.unshift({id:newRecordId(),subject:$('#timerSubject').value,topic:$('#timerTopic').value,date:dayKey(),minutes:m,type:'Study',exam:$('#examSelect').value});return m}
 function timerComplete(){let t=s.timer;if(!t.running)return;clearInterval(tick);tick=null;let m=logFocusSession(t.duration);timerReset();render();toast(`Focus session complete · ${mins(m)} saved`)}
 function timerPause(){let t=s.timer;if(!t.running)return;let e=Math.floor((Date.now()-t.startedAt)/1000);t.remaining=t.mode==='countdown'?Math.max(0,t.remaining-e):t.remaining+e;t.running=false;t.paused=true;t.startedAt=null;save();timerRender()}
 function timerReset(){let t=s.timer;t.running=false;t.paused=false;t.startedAt=null;t.remaining=t.duration;save();timerRender()}
 function timerFinish(){let t=s.timer;if(!(t.running||t.paused))return;let el=t.running?Math.floor((Date.now()-t.startedAt)/1000):0,sec=t.mode==='countdown'?Math.max(0,t.duration-t.remaining+el):t.remaining+el;let m=logFocusSession(sec);timerReset();render();toast(`Session saved · ${mins(m)}`)}
 function modal(type,item=null){let title='',body='',saveText='Save',submit=null, v=k=>safe(item?.[k]??'');if(type==='quick'){title='Quick add';body=`<div class="form"><div class="field"><label>What would you like to add?</label><select id="fType"><option value="task">Task</option><option value="note">Note</option><option value="expense">Expense</option><option value="study">Study session</option><option value="habit">Habit entry</option></select></div><div class="tiny muted">Choose a type to open a compact form.</div></div>`;saveText='Continue';submit=()=>{modal($('#fType').value)}}
 else if(type==='task'){title=item?'Edit task':'New task';let dsel=!item?'today':(item.date==='later'?'date':(item.date||'none'));body=`<div class="form"><div class="field"><label>Task</label><input id="fTitle" maxlength="140" value="${v('title')}" placeholder="What needs doing?"></div><div class="formrow"><div class="field"><label>When?</label><select id="fDate" onchange="document.getElementById('fDue').style.display=this.value==='date'?'block':'none'"><option value="today" ${dsel==='today'?'selected':''}>Today</option><option value="tomorrow" ${dsel==='tomorrow'?'selected':''}>Tomorrow</option><option value="date" ${dsel==='date'?'selected':''}>Pick a date…</option><option value="none" ${dsel==='none'?'selected':''}>No date</option></select><input id="fDue" type="date" min="${dayKey()}" value="${dsel==='date'?v('due'):''}" style="margin-top:8px;display:${dsel==='date'?'block':'none'}" aria-label="Due date"></div><div class="field"><label>Priority</label><select id="fPriority">${['High','Medium','Low'].map(x=>`<option ${v('priority')===x||(!item&&x==='Medium')?'selected':''}>${x}</option>`).join('')}</select></div></div><div class="formrow"><div class="field"><label>Category</label><select id="fCategory">${['Study','Personal','Health','Work','Projects'].map(x=>`<option ${v('category')===x||(!item&&x==='Study')?'selected':''}>${x}</option>`).join('')}</select></div><div class="field"><label>Estimate in minutes (optional)</label><input id="fEstimate" type="number" min="0" max="1440" value="${v('estimate')}" placeholder="e.g. 30"></div></div></div>`;submit=()=>{let title=$('#fTitle').value.trim();if(!title){$('#fTitle').focus();return false}let sel=$('#fDate').value,due='',dt=sel;if(sel==='today')due=dayKey();else if(sel==='tomorrow')due=dayKey(addDays(1));else if(sel==='date'){due=$('#fDue').value;if(!dayRe.test(due)||due<dayKey()){toast('Pick a due date from today onwards.');return false}dt='later'}
-let data={title,date:dt,due,priority:$('#fPriority').value,category:$('#fCategory').value,estimate:+$('#fEstimate').value||0};if(item)Object.assign(item,data);else s.tasks.unshift({id:Math.max(0,...s.tasks.map(x=>x.id))+1,...data,status:'todo'});return true}}
-else if(type==='note'){title=item?'Edit note':'New note';body=`<div class="form"><div class="field"><label>Title</label><input id="fTitle" value="${v('title')}" placeholder="A thought to keep"></div><div class="field"><label>Note</label><textarea id="fBody" placeholder="Write freely…">${v('body')}</textarea></div><div class="field"><label>Category</label><select id="fCategory">${['Personal','Study','Writing','Other'].map(x=>`<option ${v('category')===x||(!item&&x==='Personal')?'selected':''}>${x}</option>`).join('')}</select></div><label class="small"><input type="checkbox" id="fPin" ${item?.pinned?'checked':''}> Pin this note</label></div>`;submit=()=>{let title=$('#fTitle').value.trim();if(!title)return false;let data={title,body:$('#fBody').value,category:$('#fCategory').value,pinned:$('#fPin').checked};if(item)Object.assign(item,data);else s.notes.unshift({id:Math.max(0,...s.notes.map(x=>x.id))+1,...data});return true}}
-else if(type==='expense'){title='Add transaction';body=`<div class="form"><div class="field"><label>Type</label><select id="fType"><option value="expense">Expense</option><option value="income">Income</option></select></div><div class="field"><label>Description</label><input id="fTitle" placeholder="e.g. Books, allowance"></div><div class="formrow"><div class="field"><label>Amount (₹)</label><input id="fAmount" type="number" min="1" placeholder="0"></div><div class="field"><label>Category</label><select id="fCategory">${['Living','Study','Health','Personal','Income','Investment','Other'].map(x=>`<option>${x}</option>`).join('')}</select></div></div></div>`;submit=()=>{let title=$('#fTitle').value.trim(),amount=+$('#fAmount').value;if(!title||amount<=0){toast('Add a description and a valid amount.');return false}s.transactions.push({id:Math.max(0,...s.transactions.map(x=>x.id))+1,title,amount,type:$('#fType').value,category:$('#fCategory').value,date:dayKey()});return true}}
-else if(type==='study'){title='Log study session';body=`<div class="form"><div class="field"><label>Subject</label><select id="fSubject">${subjectOptions(item?.subject||'')}</select></div><div class="field"><label>Topic (optional)</label><input id="fTopic" placeholder="What did you study?"></div><div class="formrow"><div class="field"><label>Duration (minutes)</label><input id="fMinutes" type="number" min="1" max="1440" value="45"></div><div class="field"><label>Session type</label><select id="fSessionType">${['Reading','Lecture','Practice/Test','Revision','Other'].map(x=>`<option>${x}</option>`).join('')}</select></div></div><div class="tiny muted">Date: today · Backdating is part of the full version.</div></div>`;submit=()=>{let m=+$('#fMinutes').value;if(m<=0||m>1440)return false;s.sessions.unshift({id:Math.max(0,...s.sessions.map(x=>x.id))+1,subject:$('#fSubject').value,topic:$('#fTopic').value.trim(),minutes:m,date:dayKey(),type:$('#fSessionType').value,exam:$('#examSelect').value});return true}}
-else if(type==='habit'){title=item?'Edit habit':'New habit';let daysOrder=[1,2,3,4,5,6,0],dayNames=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];body=`<div class="form"><div class="field"><label>Habit name</label><input id="fTitle" value="${v('name')}" placeholder="e.g. Stretch for five minutes"></div><div class="field"><label>Icon</label><select id="fIcon">${['◉','📖','🚶','💧','✎','🧘','🏋️'].map(x=>`<option ${item?.icon===x?'selected':''}>${x}</option>`).join('')}</select></div><div class="field"><label>Repeat</label><select id="fFrequency"><option value="daily" ${!item||item.frequency!=='selected'?'selected':''}>Every day</option><option value="selected" ${item?.frequency==='selected'?'selected':''}>Selected days</option></select></div><div class="field" id="habitDays" style="display:${item?.frequency==='selected'?'block':'none'}"><label>Choose days (Monday first)</label><div class="daychoices">${daysOrder.map((d,i)=>`<label><input type="checkbox" value="${d}" class="fDay" ${(item?.days||[]).includes(d)?'checked':''}> ${dayNames[i]}</label>`).join('')}</div></div></div>`;setTimeout(()=>{let f=$('#fFrequency');f.onchange=()=>$('#habitDays').style.display=f.value==='selected'?'block':'none'},0);submit=()=>{let name=$('#fTitle').value.trim();if(!name)return false;let frequency=$('#fFrequency').value,days=$$('.fDay:checked').map(x=>+x.value);if(frequency==='selected'&&!days.length){toast('Choose at least one day.');return false}let data={name,icon:$('#fIcon').value,frequency,days:frequency==='selected'?days:[],history:habitHistory(item||{}),doneDate:item?.doneDate||''};if(item)Object.assign(item,data);else s.habits.push({id:Math.max(0,...s.habits.map(x=>x.id))+1,...data,streak:0});return true}}
-else if(type==='resource'){title=item?'Edit resource':'Add library resource';body=`<div class="form"><div class="field"><label>Title</label><input id="fTitle" value="${v('title')}" placeholder="Resource title"></div><div class="field"><label>Author (optional)</label><input id="fAuthor" value="${v('author')}" placeholder="Author or source"></div><div class="formrow"><div class="field"><label>Type</label><select id="fType">${['Books','Articles','Research Papers','PDFs','Websites','Other'].map(x=>`<option ${v('type')===x||(!item&&x==='Books')?'selected':''}>${x}</option>`).join('')}</select></div><div class="field"><label>Status</label><select id="fStatus">${['Want to Read','Not started','Reading','Completed'].map(x=>`<option ${v('status')===x||(!item&&x==='Want to Read')?'selected':''}>${x}</option>`).join('')}</select></div></div><div class="field"><label>Rating (optional)</label><select id="fRating"><option value="">No rating</option>${[1,2,3,4,5].map(n=>`<option value="${n}" ${item?.rating===n?'selected':''}>${n} / 5</option>`).join('')}</select></div></div>`;submit=()=>{let title=$('#fTitle').value.trim();if(!title)return false;let data={title,author:$('#fAuthor').value.trim(),type:$('#fType').value,status:$('#fStatus').value,rating:+$('#fRating').value||null,pinned:item?.pinned||false};if(item)Object.assign(item,data);else s.resources.unshift({id:Math.max(0,...s.resources.map(x=>x.id))+1,...data});return true}}
-else if(type==='asset'){title='Add asset or account';body=`<div class="form"><div class="field"><label>Name</label><input id="fTitle" placeholder="e.g. Savings account"></div><div class="field"><label>Type</label><select id="fType">${['Cash','Bank account','Savings','Property','Other'].map(x=>`<option>${x}</option>`).join('')}</select></div><div class="field"><label>Current value (₹)</label><input id="fAmount" type="number" min="0"></div></div>`;submit=()=>{let name=$('#fTitle').value.trim(),value=+$('#fAmount').value;if(!name||value<0)return false;s.assets.push({id:Math.max(0,...s.assets.map(x=>x.id))+1,name,type:$('#fType').value,value});return true}}
-else if(type==='investment'){title='Add investment record';body=`<div class="form"><div class="field"><label>Investment name</label><input id="fTitle" placeholder="e.g. Nifty 50 index fund"></div><div class="formrow"><div class="field"><label>Type</label><select id="fType">${['Mutual fund','SIP','Stock','ETF','Fixed deposit','Other'].map(x=>`<option>${x}</option>`).join('')}</select></div><div class="field"><label>Units / quantity (optional)</label><input id="fUnits" placeholder="e.g. 12.5"></div></div><div class="formrow"><div class="field"><label>Amount invested (₹)</label><input id="fInvested" type="number" min="0" required></div><div class="field"><label>Current value (₹)</label><input id="fCurrent" type="number" min="0" required></div></div><div class="field"><label>Date (optional)</label><input id="fDate" type="date"></div></div>`;submit=()=>{let name=$('#fTitle').value.trim(),invested=+$('#fInvested').value,currentValue=+$('#fCurrent').value;if(!name||invested<0||currentValue<0)return false;s.investments.push({id:Math.max(0,...s.investments.map(x=>x.id))+1,name,type:$('#fType').value,units:$('#fUnits').value.trim(),invested,currentValue,date:$('#fDate').value});return true}}
-else if(type==='liability'){title='Add liability';body=`<div class="form"><div class="field"><label>Name</label><input id="fTitle" placeholder="e.g. Education loan"></div><div class="field"><label>Type</label><input id="fType" placeholder="Loan, credit balance…"></div><div class="field"><label>Outstanding amount (₹)</label><input id="fAmount" type="number" min="0"></div></div>`;submit=()=>{let name=$('#fTitle').value.trim(),amount=+$('#fAmount').value;if(!name||amount<0)return false;s.liabilities.push({id:Math.max(0,...s.liabilities.map(x=>x.id))+1,name,type:$('#fType').value,amount});return true}}
+let data={title,date:dt,due,priority:$('#fPriority').value,category:$('#fCategory').value,estimate:+$('#fEstimate').value||0};if(item)Object.assign(item,data);else s.tasks.unshift({id:newRecordId(),...data,status:'todo'});return true}}
+else if(type==='note'){title=item?'Edit note':'New note';body=`<div class="form"><div class="field"><label>Title</label><input id="fTitle" value="${v('title')}" placeholder="A thought to keep"></div><div class="field"><label>Note</label><textarea id="fBody" placeholder="Write freely…">${v('body')}</textarea></div><div class="field"><label>Category</label><select id="fCategory">${['Personal','Study','Writing','Other'].map(x=>`<option ${v('category')===x||(!item&&x==='Personal')?'selected':''}>${x}</option>`).join('')}</select></div><label class="small"><input type="checkbox" id="fPin" ${item?.pinned?'checked':''}> Pin this note</label></div>`;submit=()=>{let title=$('#fTitle').value.trim();if(!title)return false;let data={title,body:$('#fBody').value,category:$('#fCategory').value,pinned:$('#fPin').checked};if(item)Object.assign(item,data);else s.notes.unshift({id:newRecordId(),...data});return true}}
+else if(type==='expense'){title='Add transaction';body=`<div class="form"><div class="field"><label>Type</label><select id="fType"><option value="expense">Expense</option><option value="income">Income</option></select></div><div class="field"><label>Description</label><input id="fTitle" placeholder="e.g. Books, allowance"></div><div class="formrow"><div class="field"><label>Amount (₹)</label><input id="fAmount" type="number" min="1" placeholder="0"></div><div class="field"><label>Category</label><select id="fCategory">${['Living','Study','Health','Personal','Income','Investment','Other'].map(x=>`<option>${x}</option>`).join('')}</select></div></div></div>`;submit=()=>{let title=$('#fTitle').value.trim(),amount=+$('#fAmount').value;if(!title||amount<=0){toast('Add a description and a valid amount.');return false}s.transactions.push({id:newRecordId(),title,amount,type:$('#fType').value,category:$('#fCategory').value,date:dayKey()});return true}}
+else if(type==='study'){title='Log study session';body=`<div class="form"><div class="field"><label>Subject</label><select id="fSubject">${subjectOptions(item?.subject||'')}</select></div><div class="field"><label>Topic (optional)</label><input id="fTopic" placeholder="What did you study?"></div><div class="formrow"><div class="field"><label>Duration (minutes)</label><input id="fMinutes" type="number" min="1" max="1440" value="45"></div><div class="field"><label>Session type</label><select id="fSessionType">${['Reading','Lecture','Practice/Test','Revision','Other'].map(x=>`<option>${x}</option>`).join('')}</select></div></div><div class="tiny muted">Date: today · Backdating is part of the full version.</div></div>`;submit=()=>{let m=+$('#fMinutes').value;if(m<=0||m>1440)return false;s.sessions.unshift({id:newRecordId(),subject:$('#fSubject').value,topic:$('#fTopic').value.trim(),minutes:m,date:dayKey(),type:$('#fSessionType').value,exam:$('#examSelect').value});return true}}
+else if(type==='habit'){title=item?'Edit habit':'New habit';let daysOrder=[1,2,3,4,5,6,0],dayNames=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];body=`<div class="form"><div class="field"><label>Habit name</label><input id="fTitle" value="${v('name')}" placeholder="e.g. Stretch for five minutes"></div><div class="field"><label>Icon</label><select id="fIcon">${['◉','📖','🚶','💧','✎','🧘','🏋️'].map(x=>`<option ${item?.icon===x?'selected':''}>${x}</option>`).join('')}</select></div><div class="field"><label>Repeat</label><select id="fFrequency"><option value="daily" ${!item||item.frequency!=='selected'?'selected':''}>Every day</option><option value="selected" ${item?.frequency==='selected'?'selected':''}>Selected days</option></select></div><div class="field" id="habitDays" style="display:${item?.frequency==='selected'?'block':'none'}"><label>Choose days (Monday first)</label><div class="daychoices">${daysOrder.map((d,i)=>`<label><input type="checkbox" value="${d}" class="fDay" ${(item?.days||[]).includes(d)?'checked':''}> ${dayNames[i]}</label>`).join('')}</div></div></div>`;setTimeout(()=>{let f=$('#fFrequency');f.onchange=()=>$('#habitDays').style.display=f.value==='selected'?'block':'none'},0);submit=()=>{let name=$('#fTitle').value.trim();if(!name)return false;let frequency=$('#fFrequency').value,days=$$('.fDay:checked').map(x=>+x.value);if(frequency==='selected'&&!days.length){toast('Choose at least one day.');return false}let data={name,icon:$('#fIcon').value,frequency,days:frequency==='selected'?days:[],history:habitHistory(item||{}),doneDate:item?.doneDate||''};if(item)Object.assign(item,data);else s.habits.push({id:newRecordId(),...data,streak:0});return true}}
+else if(type==='resource'){title=item?'Edit resource':'Add library resource';body=`<div class="form"><div class="field"><label>Title</label><input id="fTitle" value="${v('title')}" placeholder="Resource title"></div><div class="field"><label>Author (optional)</label><input id="fAuthor" value="${v('author')}" placeholder="Author or source"></div><div class="formrow"><div class="field"><label>Type</label><select id="fType">${['Books','Articles','Research Papers','PDFs','Websites','Other'].map(x=>`<option ${v('type')===x||(!item&&x==='Books')?'selected':''}>${x}</option>`).join('')}</select></div><div class="field"><label>Status</label><select id="fStatus">${['Want to Read','Not started','Reading','Completed'].map(x=>`<option ${v('status')===x||(!item&&x==='Want to Read')?'selected':''}>${x}</option>`).join('')}</select></div></div><div class="field"><label>Rating (optional)</label><select id="fRating"><option value="">No rating</option>${[1,2,3,4,5].map(n=>`<option value="${n}" ${item?.rating===n?'selected':''}>${n} / 5</option>`).join('')}</select></div></div>`;submit=()=>{let title=$('#fTitle').value.trim();if(!title)return false;let data={title,author:$('#fAuthor').value.trim(),type:$('#fType').value,status:$('#fStatus').value,rating:+$('#fRating').value||null,pinned:item?.pinned||false};if(item)Object.assign(item,data);else s.resources.unshift({id:newRecordId(),...data});return true}}
+else if(type==='asset'){title='Add asset or account';body=`<div class="form"><div class="field"><label>Name</label><input id="fTitle" placeholder="e.g. Savings account"></div><div class="field"><label>Type</label><select id="fType">${['Cash','Bank account','Savings','Property','Other'].map(x=>`<option>${x}</option>`).join('')}</select></div><div class="field"><label>Current value (₹)</label><input id="fAmount" type="number" min="0"></div></div>`;submit=()=>{let name=$('#fTitle').value.trim(),value=+$('#fAmount').value;if(!name||value<0)return false;s.assets.push({id:newRecordId(),name,type:$('#fType').value,value});return true}}
+else if(type==='investment'){title='Add investment record';body=`<div class="form"><div class="field"><label>Investment name</label><input id="fTitle" placeholder="e.g. Nifty 50 index fund"></div><div class="formrow"><div class="field"><label>Type</label><select id="fType">${['Mutual fund','SIP','Stock','ETF','Fixed deposit','Other'].map(x=>`<option>${x}</option>`).join('')}</select></div><div class="field"><label>Units / quantity (optional)</label><input id="fUnits" placeholder="e.g. 12.5"></div></div><div class="formrow"><div class="field"><label>Amount invested (₹)</label><input id="fInvested" type="number" min="0" required></div><div class="field"><label>Current value (₹)</label><input id="fCurrent" type="number" min="0" required></div></div><div class="field"><label>Date (optional)</label><input id="fDate" type="date"></div></div>`;submit=()=>{let name=$('#fTitle').value.trim(),invested=+$('#fInvested').value,currentValue=+$('#fCurrent').value;if(!name||invested<0||currentValue<0)return false;s.investments.push({id:newRecordId(),name,type:$('#fType').value,units:$('#fUnits').value.trim(),invested,currentValue,date:$('#fDate').value});return true}}
+else if(type==='liability'){title='Add liability';body=`<div class="form"><div class="field"><label>Name</label><input id="fTitle" placeholder="e.g. Education loan"></div><div class="field"><label>Type</label><input id="fType" placeholder="Loan, credit balance…"></div><div class="field"><label>Outstanding amount (₹)</label><input id="fAmount" type="number" min="0"></div></div>`;submit=()=>{let name=$('#fTitle').value.trim(),amount=+$('#fAmount').value;if(!name||amount<0)return false;s.liabilities.push({id:newRecordId(),name,type:$('#fType').value,amount});return true}}
 else if(type==='budget'){title='Add monthly budget';body=`<div class="form"><div class="field"><label>Expense category</label><select id="fTitle">${['Living','Study','Health','Personal','Other'].map(x=>`<option>${x}</option>`).join('')}</select><div class="tiny muted">Choose the same category you use when adding an expense.</div></div><div class="field"><label>Monthly limit (₹)</label><input id="fAmount" type="number" min="1"></div></div>`;submit=()=>{let name=$('#fTitle').value.trim(),total=+$('#fAmount').value;if(!name||total<=0)return false;let existing=s.budgets.find(b=>String(b.name).toLowerCase()===name.toLowerCase());if(existing)existing.total=total;else s.budgets.push({name,total,used:0});return true}}
-else if(type==='routine'){title='New routine';body=`<div class="form"><div class="field"><label>Routine name</label><input id="fTitle" placeholder="e.g. Morning reset"></div><div class="field"><label>Steps (one per line, up to 10)</label><textarea id="fRoutineSteps" placeholder="Drink water\nMake the bed\nReview priorities"></textarea></div></div>`;submit=()=>{let name=$('#fTitle').value.trim(),steps=$('#fRoutineSteps').value.split('\n').map(x=>x.trim()).filter(Boolean).slice(0,10);if(!name||!steps.length)return false;s.routines.push({id:Math.max(0,...s.routines.map(x=>x.id))+1,name,steps:steps.map((text,i)=>({id:i+1,text,done:false}))});return true}}
-else if(type==='topic'){title='Add syllabus topic';body=`<div class="form"><div class="field"><label>Subject</label><select id="fSubject">${subjectOptions()}</select></div><div class="field"><label>Or add a new subject</label><input id="fNewSubject" placeholder="Optional: new subject name"></div><div class="field"><label>Topic</label><input id="fTitle" placeholder="Topic name"></div></div>`;submit=()=>{let topic=$('#fTitle').value.trim(),newSubject=$('#fNewSubject').value.trim(),subject=newSubject||$('#fSubject').value;if(!topic)return false;s.subjects=s.subjects||[];if(!s.subjects.includes(subject))s.subjects.push(subject);s.syllabus.push({id:Math.max(0,...s.syllabus.map(x=>x.id))+1,subject,topic,status:'Not started',revisions:0,exam:$('#examSelect').value});refreshSubjectControls();return true}}
-else if(type==='goal'){title=item?'Edit goal':'New goal';let subs=item?.subgoals||[];body=`<div class="form"><div class="field"><label>Goal name</label><input id="fTitle" value="${v('title')}" placeholder="What do you want to work towards?" required></div><div class="formrow"><div class="field"><label>Life area</label><select id="fArea">${['Studies','Health','Finance','Career','Personal Growth'].map(x=>`<option ${v('area')===x?'selected':''}>${x}</option>`).join('')}</select></div><div class="field"><label>Status</label><select id="fGoalStatus">${['Not started','Active','Ongoing','Completed'].map(x=>`<option ${((item?.status||'Not started')===x || (!item&&x==='Not started'))?'selected':''}>${x}</option>`).join('')}</select></div></div><div class="field"><label>Target date (optional)</label><input id="fDate" value="${v('date')}" placeholder="e.g. 2028"></div><div class="field"><label>Description</label><textarea id="fBody" placeholder="Why does this goal matter?">${v('desc')}</textarea></div><div class="field"><label>Sub-goals (one per line)</label><textarea id="fSubgoals" placeholder="Finish a course\nComplete a project">${safe(subs.map(x=>x.text).join('\n'))}</textarea><div class="tiny muted">Existing completed sub-goals are preserved when their text stays the same.</div></div></div>`;submit=()=>{let title=$('#fTitle').value.trim();if(!title)return false;let lines=$('#fSubgoals').value.split('\n').map(x=>x.trim()).filter(Boolean),old=item?.subgoals||[],used=new Set(),nextSubs=lines.map((text,i)=>{let existing=old.find(x=>x.text===text&&!used.has(x.id));if(existing)used.add(existing.id);return existing?{...existing}:{id:Math.max(0,...old.map(x=>x.id||0),...lines.map((_,j)=>j))+i+1,text,done:false}});let data={title,area:$('#fArea').value,date:$('#fDate').value.trim(),status:$('#fGoalStatus').value,desc:$('#fBody').value,subgoals:nextSubs,timeline:item?.timeline||[]};data.timeline.unshift({date:new Date().toISOString(),text:item?'Goal details updated':'Goal created'});if(item)Object.assign(item,data);else s.goals.push({id:Math.max(0,...s.goals.map(x=>x.id))+1,...data});return true}}
-else if(type==='project'){title='New project';body=`<div class="form"><div class="field"><label>Project name</label><input id="fTitle" placeholder="What are you working on?"></div><div class="field"><label>Linked task count (demo)</label><input id="fSteps" type="number" min="0" value="0"></div></div>`;submit=()=>{let title=$('#fTitle').value.trim();if(!title)return false;let n=Math.max(0,+$('#fSteps').value||0);s.projects.push({id:Math.max(0,...s.projects.map(x=>x.id))+1,title,status:'Not started',tasks:n,done:0});return true}}
+else if(type==='routine'){title='New routine';body=`<div class="form"><div class="field"><label>Routine name</label><input id="fTitle" placeholder="e.g. Morning reset"></div><div class="field"><label>Steps (one per line, up to 10)</label><textarea id="fRoutineSteps" placeholder="Drink water\nMake the bed\nReview priorities"></textarea></div></div>`;submit=()=>{let name=$('#fTitle').value.trim(),steps=$('#fRoutineSteps').value.split('\n').map(x=>x.trim()).filter(Boolean).slice(0,10);if(!name||!steps.length)return false;s.routines.push({id:newRecordId(),name,steps:steps.map((text,i)=>({id:i+1,text,done:false}))});return true}}
+else if(type==='topic'){title='Add syllabus topic';body=`<div class="form"><div class="field"><label>Subject</label><select id="fSubject">${subjectOptions()}</select></div><div class="field"><label>Or add a new subject</label><input id="fNewSubject" placeholder="Optional: new subject name"></div><div class="field"><label>Topic</label><input id="fTitle" placeholder="Topic name"></div></div>`;submit=()=>{let topic=$('#fTitle').value.trim(),newSubject=$('#fNewSubject').value.trim(),subject=newSubject||$('#fSubject').value;if(!topic)return false;s.subjects=s.subjects||[];if(!s.subjects.includes(subject))s.subjects.push(subject);s.syllabus.push({id:newRecordId(),subject,topic,status:'Not started',revisions:0,exam:$('#examSelect').value});refreshSubjectControls();return true}}
+else if(type==='goal'){title=item?'Edit goal':'New goal';let subs=item?.subgoals||[];body=`<div class="form"><div class="field"><label>Goal name</label><input id="fTitle" value="${v('title')}" placeholder="What do you want to work towards?" required></div><div class="formrow"><div class="field"><label>Life area</label><select id="fArea">${['Studies','Health','Finance','Career','Personal Growth'].map(x=>`<option ${v('area')===x?'selected':''}>${x}</option>`).join('')}</select></div><div class="field"><label>Status</label><select id="fGoalStatus">${['Not started','Active','Ongoing','Completed'].map(x=>`<option ${((item?.status||'Not started')===x || (!item&&x==='Not started'))?'selected':''}>${x}</option>`).join('')}</select></div></div><div class="field"><label>Target date (optional)</label><input id="fDate" value="${v('date')}" placeholder="e.g. 2028"></div><div class="field"><label>Description</label><textarea id="fBody" placeholder="Why does this goal matter?">${v('desc')}</textarea></div><div class="field"><label>Sub-goals (one per line)</label><textarea id="fSubgoals" placeholder="Finish a course\nComplete a project">${safe(subs.map(x=>x.text).join('\n'))}</textarea><div class="tiny muted">Existing completed sub-goals are preserved when their text stays the same.</div></div></div>`;submit=()=>{let title=$('#fTitle').value.trim();if(!title)return false;let lines=$('#fSubgoals').value.split('\n').map(x=>x.trim()).filter(Boolean),old=item?.subgoals||[],used=new Set(),nextSubs=lines.map((text,i)=>{let existing=old.find(x=>x.text===text&&!used.has(x.id));if(existing)used.add(existing.id);return existing?{...existing}:{id:Math.max(0,...old.map(x=>x.id||0),...lines.map((_,j)=>j))+i+1,text,done:false}});let data={title,area:$('#fArea').value,date:$('#fDate').value.trim(),status:$('#fGoalStatus').value,desc:$('#fBody').value,subgoals:nextSubs,timeline:item?.timeline||[]};data.timeline.unshift({date:new Date().toISOString(),text:item?'Goal details updated':'Goal created'});if(item)Object.assign(item,data);else s.goals.push({id:newRecordId(),...data});return true}}
+else if(type==='project'){title='New project';body=`<div class="form"><div class="field"><label>Project name</label><input id="fTitle" placeholder="What are you working on?"></div><div class="field"><label>Linked task count (demo)</label><input id="fSteps" type="number" min="0" value="0"></div></div>`;submit=()=>{let title=$('#fTitle').value.trim();if(!title)return false;let n=Math.max(0,+$('#fSteps').value||0);s.projects.push({id:newRecordId(),title,status:'Not started',tasks:n,done:0});return true}}
 $('#modalTitle').textContent=title;$('#modalBody').innerHTML=body;$('#modalBack').classList.add('open');$('#modalSave').textContent=saveText;$('#modalSave').onclick=()=>{if(!submit||submit()===false)return;if(type==='quick')return;$('#modalBack').classList.remove('open');save();render();toast(item?'Changes saved.':'Added to your workspace.')};bindModalClose();setTimeout(()=>$('#modalBody input,#modalBody select,#modalBody textarea')?.focus(),30)}
 function settingsPage(){applyPrefs()}
 function render(){if(rollover())save();refreshSubjectControls();home();tasksPage();habitsPage();studyPage();focusPage();notesPage();financePage();libraryPage();projectsPage();calendarPage();timerRender()}
 function search(){document.querySelector('#searchModal')?.remove();let d=document.createElement('div');d.className='modalback open';d.id='searchModal';d.innerHTML=`<div class="modal"><div class="modalhead"><h2>Search LifeOS</h2><button class="close" id="searchClose" aria-label="Close search">×</button></div><input class="search" style="width:100%" id="globalQ" placeholder="Search tasks, notes, study…"><div class="tiny muted" style="margin:9px 0">Finance is excluded from global search.</div><div id="globalResults" class="table"></div></div>`;document.body.append(d);let inp=$('#globalQ');inp.oninput=()=>{let q=inp.value.toLowerCase(),r=[];s.tasks.filter(x=>x.title.toLowerCase().includes(q)&&q).forEach(x=>r.push({title:x.title,type:'Task',page:'tasks'}));s.notes.filter(x=>(x.title+' '+x.body).toLowerCase().includes(q)&&q).forEach(x=>r.push({title:x.title,type:'Note',page:'notes'}));s.syllabus.filter(x=>(x.topic+' '+x.subject).toLowerCase().includes(q)&&q).forEach(x=>r.push({title:x.topic,type:'Syllabus',page:'study'}));s.resources.filter(x=>(x.title+' '+x.author).toLowerCase().includes(q)&&q).forEach(x=>r.push({title:x.title,type:'Library',page:'library'}));$('#globalResults').innerHTML=r.length?r.map((x,i)=>`<button class="row" data-result="${i}" style="width:100%;text-align:left;background:transparent;border:0"><div class="rowmain"><div class="rowtitle">${safe(x.title)}</div><div class="rowsub">${x.type}</div></div>↗</button>`).join(''):'<div class="empty">Start typing to search.</div>';$$('[data-result]').forEach(b=>b.onclick=()=>{let x=r[+b.dataset.result];d.remove();nav(x.page)})};$('#searchClose').onclick=()=>d.remove();d.onclick=e=>{if(e.target===d)d.remove()};inp.focus()}
 
 function exportData(){let payload={app:'LifeOS',backupVersion:1,exportedAt:new Date().toISOString(),workspace:s,preferences:prefs};let blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download='lifeos-workspace-backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);toast('Workspace backup exported.')}
-function reset(){inPageConfirm('Reset workspace','This permanently clears your LifeOS workspace in the cloud and on all synced devices. Continue?',()=>{inPageConfirm('Final confirmation','Delete tasks, notes, goals, study records, finance records and all other workspace data?',()=>{s=seed();save();render();nav('home');toast('Workspace reset. Preferences were kept.');},true);},true);}
+async function resetWorkspaceSafely(){
+  const oldWorkspace=JSON.parse(JSON.stringify(s));
+  s=seed();save();render();
+  const ok=await pushCloud();
+  if(!ok){
+    s=oldWorkspace;dirty=true;writeCache();writeMeta({user:cloudUser?.id,revision:baseRevision,dirty:true});
+    render();toast('Reset was not saved to the cloud. Your previous local workspace has been restored.');
+    return;
+  }
+  render();nav('home');toast('Workspace reset and saved to the cloud. Preferences were kept.');
+}
+function reset(){inPageConfirm('Reset workspace','This permanently clears your LifeOS workspace in the cloud and on all synced devices. Continue?',()=>{inPageConfirm('Final confirmation','Delete tasks, notes, goals, study records, finance records and all other workspace data?',()=>resetWorkspaceSafely(),true);},true);}
 function resetPreferences(){inPageConfirm('Reset preferences','Reset appearance, profile and planning preferences? Workspace records will remain unchanged.',()=>{prefs={theme:'dark',accent:'amber',density:'comfortable',font:'default',name:'',motto:'',avatar:'UG',picture:'',hiddenModules:[],summaries:{tasks:true,study:true,habits:true},weekStart:1,clock:'12',dateFormat:'dmy'};save();applyPrefs();render();toast('Preferences reset. Your records are unchanged.');});}
 async function compressImage(file){if(!file||!file.type||!file.type.startsWith('image/'))throw new Error('Choose an image file.');if(file.size>20*1024*1024)throw new Error('Choose an image smaller than 20 MB.');let bitmap;try{if('createImageBitmap' in window)bitmap=await createImageBitmap(file)}catch(e){}let canvas=document.createElement('canvas'),side=256;canvas.width=side;canvas.height=side;let ctx=canvas.getContext('2d');if(!ctx)throw new Error('Image processing is not available in this browser.');if(bitmap){let scale=Math.max(side/bitmap.width,side/bitmap.height),w=bitmap.width*scale,h=bitmap.height*scale;ctx.drawImage(bitmap,(side-w)/2,(side-h)/2,w,h);bitmap.close?.()}else{let url=URL.createObjectURL(file);try{let img=await new Promise((resolve,reject)=>{let im=new Image();im.onload=()=>resolve(im);im.onerror=()=>reject(new Error('This image could not be opened. Try saving it as JPG or PNG.'));im.src=url});let scale=Math.max(side/img.naturalWidth,side/img.naturalHeight),w=img.naturalWidth*scale,h=img.naturalHeight*scale;ctx.drawImage(img,(side-w)/2,(side-h)/2,w,h)}finally{URL.revokeObjectURL(url)}}let data=canvas.toDataURL('image/jpeg',0.72);if(data.length>300000)throw new Error('Could not compress this picture enough. Try a smaller image.');return data}
 function validBackup(x){let w=x?.workspace||x;if(!w||typeof w!=='object'||!Array.isArray(w.tasks)||!Array.isArray(w.habits))return false;for(let k of ['routines','notes','sessions','syllabus','transactions','budgets','resources','goals','projects','investments','assets','liabilities','exams','subjects'])if(w[k]!==undefined&&!Array.isArray(w[k]))return false;return true}
 function backupArrays(w){return ['tasks','habits','routines','notes','sessions','syllabus','transactions','budgets','resources','goals','projects','investments','assets','liabilities','exams','subjects'].filter(k=>Array.isArray(w[k]))}
 function backupPreview(file){let fr=new FileReader();fr.onerror=()=>toast('Could not read the backup file.');fr.onload=()=>{try{let x=JSON.parse(fr.result);if(!validBackup(x))throw new Error('This does not look like a valid LifeOS backup.');let w=x.workspace||x;pendingBackup={data:x,fileName:file.name};let keys=backupArrays(w),counts=keys.reduce((a,k)=>a+(w[k]?.length||0),0);let current=keys.reduce((a,k)=>a+(s[k]?.length||0),0);let conflicts=keys.reduce((a,k)=>a+(w[k]||[]).filter(r=>r&&r.id!=null&&(s[k]||[]).some(q=>q.id===r.id)).length,0);$('#restorePreview').style.display='block';$('#restorePreview').innerHTML=`<b>Backup validated: ${safe(file.name)}</b><p>${keys.length} data categories · ${counts} imported records · ${current} current records · ${conflicts} matching record IDs to review.</p><div class="setting-control"><button class="btn" id="restoreReplace">Replace workspace</button><button class="btn" id="restoreMerge">Merge records</button><button class="textbtn" id="cancelRestore">Cancel</button></div><div class="settings-help">Replace overwrites current workspace records. Merge updates records with matching IDs and appends new ones; records without IDs are appended. A safety copy is downloaded before either action.</div>`;$('#restoreReplace').onclick=()=>restoreBackup('replace');$('#restoreMerge').onclick=()=>restoreBackup('merge');$('#cancelRestore').onclick=()=>{pendingBackup=null;$('#restorePreview').style.display='none';$('#importFile').value=''}}catch(e){pendingBackup=null;$('#restorePreview').style.display='block';$('#restorePreview').textContent=e.message||'Invalid backup file.'}};fr.readAsText(file)}
-function restoreBackup(mode){if(!pendingBackup)return;let x=pendingBackup.data,w=x.workspace||x;if(!validBackup(x)){toast('Backup validation failed.');return}let keys=backupArrays(w),conflicts=keys.reduce((a,k)=>a+(w[k]||[]).filter(r=>r&&r.id!=null&&(s[k]||[]).some(q=>q.id===r.id)).length,0);const doRestore=()=>{exportData();try{let next;if(mode==='replace'){next=normalizeWorkspace(w)}else{next=mergeWorkspace(JSON.parse(JSON.stringify(s)),normalizeWorkspace(w));next.timer=s.timer}let oldS=s,oldPrefs=prefs;s=next;if(x.preferences&&typeof x.preferences==='object')prefs=mergePrefs(prefs,x.preferences);try{localStorage.setItem('lifeos-review-v2',JSON.stringify(s));localStorage.setItem('lifeos-review-prefs',JSON.stringify(prefs))}catch(err){s=oldS;prefs=oldPrefs;throw new Error('Browser storage is full. Existing workspace was preserved; export data or remove the profile picture before retrying.')}pendingBackup=null;$('#restorePreview').style.display='none';$('#importFile').value='';save();flushCloud();applyPrefs();render();nav('home');toast(mode==='replace'?'Workspace restored.':'Backup merged into workspace.')}catch(e){toast(e.message||'Restore failed. Existing workspace was preserved.')}};if(mode==='merge'){inPageConfirm('Merge backup',`Merge ${pendingBackup.fileName}? Preview: ${keys.map(k=>`${k}: ${(w[k]||[]).length} imported`).join(', ')}. ${conflicts} matching IDs will be updated; records without IDs will be appended. A safety backup will be downloaded first. Continue?`,doRestore);}else{inPageConfirm('Replace workspace',`Replace the current workspace with ${pendingBackup.fileName}? This cannot be undone unless you have a backup.`,doRestore,true);}}
+function restoreBackup(mode){if(!pendingBackup)return;let x=pendingBackup.data,w=x.workspace||x;if(!validBackup(x)){toast('Backup validation failed.');return}let keys=backupArrays(w),conflicts=keys.reduce((a,k)=>a+(w[k]||[]).filter(r=>r&&r.id!=null&&(s[k]||[]).some(q=>q.id===r.id)).length,0);const doRestore=async()=>{
+  exportData();const oldS=JSON.parse(JSON.stringify(s)),oldPrefs=JSON.parse(JSON.stringify(prefs));
+  try{
+    let next;
+    if(mode==='replace')next=normalizeWorkspace(w);
+    else{next=mergeWorkspace(JSON.parse(JSON.stringify(s)),normalizeWorkspace(w));next.timer=s.timer}
+    s=next;if(x.preferences&&typeof x.preferences==='object')prefs=mergePrefs(prefs,x.preferences);
+    try{localStorage.setItem('lifeos-review-v2',JSON.stringify(s));localStorage.setItem('lifeos-review-prefs',JSON.stringify(prefs))}
+    catch(err){s=oldS;prefs=oldPrefs;throw new Error('Browser storage is full. Existing workspace was preserved; export data or remove the profile picture before retrying.')}
+    pendingBackup=null;$('#restorePreview').style.display='none';$('#importFile').value='';
+    save();applyPrefs();render();nav('home');
+    const ok=await pushCloud();
+    if(!ok){
+      s=oldS;prefs=oldPrefs;dirty=true;writeCache();writeMeta({user:cloudUser?.id,revision:baseRevision,dirty:true});
+      applyPrefs();render();toast('Restore was not saved to the cloud. Your previous local workspace has been restored.');
+      return;
+    }
+    toast(mode==='replace'?'Workspace restored and saved to the cloud.':'Backup merged and saved to the cloud.');
+  }catch(e){s=oldS;prefs=oldPrefs;writeCache();applyPrefs();render();toast(e.message||'Restore failed. Existing workspace was preserved.')}
+};if(mode==='merge'){inPageConfirm('Merge backup',`Merge ${pendingBackup.fileName}? Preview: ${keys.map(k=>`${k}: ${(w[k]||[]).length} imported`).join(', ')}. ${conflicts} matching IDs will be updated; records without IDs will be appended. A safety backup will be downloaded first. Continue?`,doRestore);}else{inPageConfirm('Replace workspace',`Replace the current workspace with ${pendingBackup.fileName}? This cannot be undone unless you have a backup.`,doRestore,true);}}
 
 function saveProfile(){prefs.name=$('#profileNameInput').value.trim().slice(0,60);prefs.motto=$('#profileMottoInput').value.trim().slice(0,120);save();applyPrefs();toast('Profile saved.')}
 
