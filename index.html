@@ -1256,6 +1256,112 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.45));
 }
 
+/* Light theme contrast adjustments */
+[data-theme="light"] {
+  --panel2: #eef2f7;
+  --panel3: #e2e8f0;
+  --line: rgba(15, 23, 42, 0.16);
+  --line-hover: rgba(15, 23, 42, 0.28);
+  --text-muted: #475569;
+  --muted: #475569;
+  --mint: #047857;
+  --blue: #1d4ed8;
+  --yellow: #92400e;
+  --red: #b91c1c;
+  --shadow-sm: 0 4px 14px rgba(15, 23, 42, 0.08);
+  --shadow-md: 0 10px 30px rgba(15, 23, 42, 0.12);
+  --shadow-lg: 0 20px 60px rgba(15, 23, 42, 0.16);
+}
+[data-theme="light"][data-accent="amber"], [data-theme="light"][data-accent="blue"] {
+  --coral: #b45309;
+  --accent: #b45309;
+  --blue: #b45309;
+  --accent-glow: rgba(180, 83, 9, 0.18);
+  --accent-subtle: rgba(180, 83, 9, 0.12);
+}
+[data-theme="light"][data-accent="green"], [data-theme="light"][data-accent="violet"] {
+  --coral: #047857;
+  --accent: #047857;
+  --blue: #047857;
+  --accent-glow: rgba(4, 120, 87, 0.18);
+  --accent-subtle: rgba(4, 120, 87, 0.12);
+}
+[data-theme="light"][data-accent="coral"] {
+  --coral: #9a3412;
+  --accent: #9a3412;
+  --blue: #c2410c;
+  --accent-glow: rgba(154, 52, 18, 0.18);
+  --accent-subtle: rgba(154, 52, 18, 0.12);
+}
+[data-theme="light"][data-accent="slate"] {
+  --coral: #334155;
+  --accent: #334155;
+  --blue: #475569;
+  --accent-glow: rgba(51, 65, 85, 0.18);
+  --accent-subtle: rgba(51, 65, 85, 0.12);
+}
+[data-theme="light"] .label { opacity: 1; }
+[data-theme="light"] .score {
+  background: linear-gradient(135deg, #ffffff, #f1f5f9) !important;
+  border-color: var(--line) !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+[data-theme="light"] .score::after {
+  background: radial-gradient(circle, var(--accent-subtle) 0%, rgba(4, 120, 87, 0.05) 50%, transparent 75%) !important;
+  opacity: 0.7 !important;
+}
+[data-theme="light"] .ring {
+  background: conic-gradient(var(--mint) 0% 0%, var(--panel3) 0% 100%) !important;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.12) !important;
+}
+[data-theme="light"] .ring::before { box-shadow: inset 0 1px 3px rgba(15, 23, 42, 0.12); }
+[data-theme="light"] .timer-ring {
+  border-top-color: var(--accent) !important;
+  border-right-color: var(--coral) !important;
+  border-bottom-color: var(--line-hover) !important;
+  border-left-color: var(--line-hover) !important;
+  box-shadow: 0 0 16px var(--accent-subtle), inset 0 0 8px var(--accent-subtle) !important;
+}
+[data-theme="light"] .metric strong {
+  background: none !important;
+  -webkit-background-clip: initial !important;
+  background-clip: initial !important;
+  -webkit-text-fill-color: var(--text) !important;
+  color: var(--text) !important;
+}
+[data-theme="light"] .nav .ico { box-shadow: inset 0 0 0 1px var(--line); }
+[data-theme="light"] .nav[data-page="home"] .ico,
+[data-theme="light"] .nav[data-page="profile"] .ico { color: #b45309; background: rgba(180, 83, 9, 0.1); }
+[data-theme="light"] .nav[data-page="tasks"] .ico,
+[data-theme="light"] .nav[data-page="habits"] .ico,
+[data-theme="light"] .nav[data-page="finance"] .ico { color: #047857; background: rgba(4, 120, 87, 0.1); }
+[data-theme="light"] .nav[data-page="projects"] .ico,
+[data-theme="light"] .nav[data-page="study"] .ico,
+[data-theme="light"] .nav[data-page="library"] .ico { color: #c2410c; background: rgba(194, 65, 12, 0.1); }
+[data-theme="light"] .nav[data-page="focus"] .ico { color: #be123c; background: rgba(190, 18, 60, 0.1); }
+[data-theme="light"] .nav[data-page="notes"] .ico { color: #92400e; background: rgba(146, 64, 14, 0.1); }
+[data-theme="light"] .nav[data-page="calendar"] .ico { color: #b45309; background: rgba(180, 83, 9, 0.1); }
+[data-theme="light"] .nav[data-page="settings"] .ico { color: #475569; background: rgba(71, 85, 105, 0.1); }
+[data-theme="light"] .cat-study, [data-theme="light"] .cat-projects { color: #c2410c; background: rgba(194, 65, 12, 0.08); border-color: rgba(194, 65, 12, 0.2); }
+[data-theme="light"] .cat-personal { color: #92400e; background: rgba(146, 64, 14, 0.08); border-color: rgba(146, 64, 14, 0.2); }
+[data-theme="light"] .cat-health { color: #047857; background: rgba(4, 120, 87, 0.08); border-color: rgba(4, 120, 87, 0.2); }
+[data-theme="light"] .cat-work { color: #334155; background: rgba(51, 65, 85, 0.06); border-color: rgba(51, 65, 85, 0.18); }
+[data-theme="light"] .prio-high { color: #b91c1c; background: rgba(185, 28, 28, 0.08); border-color: rgba(185, 28, 28, 0.2); }
+[data-theme="light"] .prio-medium { color: #92400e; background: rgba(146, 64, 14, 0.08); border-color: rgba(146, 64, 14, 0.2); }
+[data-theme="light"] .prio-low { color: #047857; background: rgba(4, 120, 87, 0.08); border-color: rgba(4, 120, 87, 0.2); }
+[data-theme="light"] .habiticon { color: #047857 !important; background: rgba(4, 120, 87, 0.08) !important; border-color: rgba(4, 120, 87, 0.2); }
+[data-theme="light"] .danger-btn { color: #b91c1c; background: rgba(185, 28, 28, 0.08); border-color: rgba(185, 28, 28, 0.28); }
+[data-theme="light"] .danger-btn:hover { background: rgba(185, 28, 28, 0.14); border-color: #b91c1c; }
+[data-theme="light"] .bottomnav button.active { color: var(--accent) !important; filter: drop-shadow(0 0 4px var(--accent-subtle)); }
+[data-theme="light"] input::placeholder, [data-theme="light"] textarea::placeholder { color: var(--muted); opacity: 1; }
+[data-theme="light"] .btn:disabled, [data-theme="light"] .primary:disabled, [data-theme="light"] .iconbtn:disabled {
+  color: var(--muted);
+  background: var(--panel2);
+  border-color: var(--line);
+  box-shadow: none;
+  opacity: 0.75;
+}
+
 </style>
 <style id="lifeos-weekday-layout-fix">
 /* Keep habit weekday choices readable and Monday-first on narrow and wide screens. */
