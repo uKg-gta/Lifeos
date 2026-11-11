@@ -28,9 +28,33 @@ test('RPC save result rejects malformed or unsafe revisions',()=>{
   assert.throws(()=>core.parseSaveResult({saved:true,new_revision:'9007199254740992'}),/invalid revision/);
 });
 
-test('revision mismatch is treated as a conflict, never an automatic merge',()=>{
+test('revision mismatch is exposed to the sync layer as a conflict signal',()=>{
   assert.equal(core.hasRevisionConflict(4,5),true);
   assert.equal(core.hasRevisionConflict('5',5),false);
+});
+
+test('offline merge keeps different entries created on separate devices',()=>{
+  const base={workspace:{tasks:[{id:1,title:'Existing',_lifeosUpdatedAt:10}]},preferences:{}};
+  const local={workspace:{tasks:[...base.workspace.tasks,{id:2,title:'Phone entry',_lifeosUpdatedAt:20}]},preferences:{}};
+  const remote={workspace:{tasks:[...base.workspace.tasks,{id:3,title:'PC entry',_lifeosUpdatedAt:30}]},preferences:{}};
+  const merged=core.mergeSnapshots(base,local,remote);
+  assert.deepEqual(merged.workspace.tasks.map(task=>task.id).sort(),[1,2,3]);
+});
+
+test('offline merge keeps the later timestamp when both devices edit one entry',()=>{
+  const base={workspace:{tasks:[{id:1,title:'Original',_lifeosUpdatedAt:10}]},preferences:{}};
+  const local={workspace:{tasks:[{id:1,title:'Phone edit',_lifeosUpdatedAt:20}]},preferences:{}};
+  const remote={workspace:{tasks:[{id:1,title:'PC edit',_lifeosUpdatedAt:30}]},preferences:{}};
+  const merged=core.mergeSnapshots(base,local,remote);
+  assert.equal(merged.workspace.tasks[0].title,'PC edit');
+});
+
+test('offline merge keeps a newer deletion instead of restoring an older entry',()=>{
+  const base={workspace:{tasks:[{id:1,title:'Remove me',_lifeosUpdatedAt:10}]},preferences:{}};
+  const local={workspace:{tasks:[],_lifeosSync:{tombstones:{tasks:{'i:1':40}}}},preferences:{}};
+  const remote={workspace:{tasks:[{id:1,title:'Older edit',_lifeosUpdatedAt:30}]},preferences:{}};
+  const merged=core.mergeSnapshots(base,local,remote);
+  assert.deepEqual(merged.workspace.tasks,[]);
 });
 
 test('legacy-write migration increments revision only when caller did not',()=>{
