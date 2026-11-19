@@ -1,7 +1,7 @@
 
 (()=>{'use strict';
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
-const now=new Date(), dateLabel=(d=new Date())=>{let o=prefs.dateFormat||'dmy';if(o==='iso')return d.toLocaleDateString('en-CA');if(o==='mdy')return d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});return d.toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'})}, safe=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const now=new Date(), dateLabel=(d=new Date())=>dateUtils.dateLabel(d,prefs.dateFormat), safe=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const seed=()=>({tasks:[],habits:[],routines:[],notes:[],sessions:[],syllabus:[],transactions:[],budgets:[],resources:[],goals:[],projects:[],investments:[],assets:[],liabilities:[],exams:[],subjects:[],studyToday:0,studyWeek:0,timer:{mode:'countdown',duration:1500,remaining:1500,running:false,startedAt:null,paused:false}});
 let s=seed(), prefs={theme:'dark',accent:'amber',density:'comfortable',font:'default',name:'',motto:'',avatar:'UG',picture:'',hiddenModules:[],summaries:{tasks:true,study:true,habits:true},weekStart:1,clock:'12',dateFormat:'dmy',budgetResetDay:1}, pendingBackup=null, taskView='all',bookView='cards',weekOffset=0,financeMonth=null,tick=null,toastTimer=null,modalSaveFn=null,modalReturnFocus=null,searchReturnFocus=null;
 const weight=p=>p==='High'?3:p==='Low'?1:2, todayTasks=()=>s.tasks.filter(t=>t.date==='today'), score=()=>{let a=todayTasks(),total=a.reduce((n,t)=>n+weight(t.priority),0);return total?Math.round(a.filter(t=>t.status==='done').reduce((n,t)=>n+weight(t.priority),0)/total*100):null}, mins=m=>{m=Math.max(0,Math.round(m||0));return m>=60?`${Math.floor(m/60)}h ${m%60}m`:`${m}m`}, money=n=>{n=Math.round(Number(n)||0);return (n<0?'−':'')+'₹'+Math.abs(n).toLocaleString('en-IN')}, fmtsec=n=>`${String(Math.floor(Math.max(0,n)/60)).padStart(2,'0')}:${String(Math.max(0,n)%60).padStart(2,'0')}`;
@@ -20,7 +20,7 @@ const dayRe=/^\d{4}-\d{2}-\d{2}$/;
 const safePic=p=>typeof p==='string'&&p.length<400000&&/^data:image\/(?:jpeg|png|webp|gif);base64,[A-Za-z0-9+\/=]+$/.test(p)?p:'';
 const stampMs=v=>{const t=new Date(v).getTime();return Number.isFinite(t)?t:0};
 const logicalNow=()=>Math.max(Date.now(),stampMs(baseStamp)+1,num(s?._lifeosSync?.workspaceStamp)+1);
-function addDays(n,from=new Date()){const d=new Date(from);d.setDate(d.getDate()+n);return d}
+function addDays(n,from=new Date()){return dateUtils.addDays(n,from)}
 function withIds(list){const seen=new Set();return list.map(x=>{const n=Number(x.id);const ok=x.id!=null&&x.id!==''&&Number.isSafeInteger(n)&&n>=0&&!seen.has(n);let id=ok?n:newRecordId();while(seen.has(id))id=newRecordId();seen.add(id);return {...x,id}})}
 function normalizePrefs(p){
   const d=defaultPrefs();p=p&&typeof p==='object'?p:{};const sm=p.summaries&&typeof p.summaries==='object'?p.summaries:{};
@@ -389,9 +389,10 @@ function rollover(){
   return ch;
 }
 function adoptOrphans(name){s.syllabus.forEach(t=>{if(t.exam===undefined)t.exam=name});s.sessions.forEach(x=>{if(x.exam===undefined)x.exam=name})}
-function weekStartKey(d=new Date()){const x=new Date(d);x.setDate(x.getDate()-((x.getDay()+6)%7));return dayKey(x)}
+function weekStartKey(d=new Date()){return dateUtils.weekStartKey(d)}
 function studyTargetMins(){const m=Math.round(Number(prefs&&prefs.studyTargetMins));return Number.isFinite(m)&&m>=5&&m<=1440?m:180}
 const studyUtils=window.LifeOSStudyUtils;
+const dateUtils=window.LifeOSDateUtils;
 function dur(m){return studyUtils.formatDuration(m)}
 function hm(m){return studyUtils.formatHoursMinutes(m)}
 function studyProgressText(done,target){return studyUtils.progressText(done,target)}
@@ -399,14 +400,9 @@ function studyProgressText(done,target){return studyUtils.progressText(done,targ
 function studyTodayMins(){const k=dayKey();return s.sessions.filter(x=>x.date===k).reduce((a,x)=>a+(+x.minutes||0),0)}
 function studyWeekMins(){const k=weekStartKey(),t=dayKey();return s.sessions.filter(x=>x.date>=k&&x.date<=t).reduce((a,x)=>a+(+x.minutes||0),0)}
 function sessionDateLabel(d){if(!dayRe.test(d||''))return 'Earlier';return d===dayKey()?'Today':dateLabel(new Date(d+'T12:00:00'))}
-function examDaysLeft(d){const t=new Date(d+'T00:00:00');if(isNaN(t))return '—';const n=new Date();n.setHours(0,0,0,0);const diff=Math.round((t-n)/86400000);return diff<0?'—':diff}
-function fmtTime(d=new Date()){const h24=prefs.clock==='24';return d.toLocaleTimeString(h24?'en-GB':'en-US',{hour:h24?'2-digit':'numeric',minute:'2-digit',hour12:!h24})}
-function fullDateLabel(d=new Date()){
-  let o=prefs.dateFormat||'dmy';
-  if(o==='iso')return d.toLocaleDateString('en-CA')+' ('+d.toLocaleDateString('en-IN',{weekday:'short'})+')';
-  if(o==='mdy')return d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
-  return d.toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
-}
+function examDaysLeft(d){return dateUtils.examDaysLeft(d)}
+function fmtTime(d=new Date()){return dateUtils.formatTime(d,prefs.clock)}
+function fullDateLabel(d=new Date()){return dateUtils.fullDateLabel(d,prefs.dateFormat)}
 function updateDateLabels(){
   const d=new Date(),e=$('#eyebrow'),t=$('#topdate'),c=$('#datechip');
   if(e)e.textContent='YOUR SPACE';
@@ -504,7 +500,7 @@ function taskRow(t,full=false){
   </div>`;
 }
 function subjectNames(){return [...new Set([...(s.subjects||[]),...s.syllabus.map(x=>x.subject),...s.sessions.map(x=>x.subject)].filter(Boolean))].sort((a,b)=>a.localeCompare(b))}function subjectOptions(selected=''){let names=subjectNames();if(selected&&!names.includes(selected))names.push(selected);return names.map(x=>`<option ${x===selected?'selected':''}>${safe(x)}</option>`).join('')}function refreshSubjectControls(){let names=subjectNames();let timer=$('#timerSubject');if(timer){let current=timer.value;timer.innerHTML='<option value="">Select subject</option>'+names.map(x=>`<option>${safe(x)}</option>`).join('');if(current&&names.includes(current))timer.value=current}let examSel=$('#examSelect');if(examSel){let current=examSel.value;examSel.innerHTML='<option value="">Select an exam</option>'+s.exams.map(e=>`<option value="${safe(e.name)}">${safe(e.name)}</option>`).join('');if(current&&s.exams.some(e=>e.name===current))examSel.value=current}}
-function dayKey(d=new Date()){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}function weekdayKey(key){return new Date(key+'T12:00:00').getDay()}function habitScheduledOn(h,key){let d=weekdayKey(key);return !h.days||h.days.length===0||h.days.includes(d)}function habitScheduled(h){return habitScheduledOn(h,dayKey())}function habitHistory(h){let hist=Array.isArray(h.history)?h.history.slice():[];if(h.doneDate&&!hist.includes(h.doneDate))hist.push(h.doneDate);return [...new Set(hist.filter(x=>/^\d{4}-\d{2}-\d{2}$/.test(x)))].sort()}function habitDone(h,key=dayKey()){return habitHistory(h).includes(key)}function habitStreak(h){let hist=new Set(habitHistory(h)),d=new Date();if(!hist.has(dayKey(d))){d.setDate(d.getDate()-1);while(!habitScheduledOn(h,dayKey(d))&&!hist.has(dayKey(d))&&d.getTime()>Date.now()-40*86400000)d.setDate(d.getDate()-1)}let n=0;for(let i=0;i<400;i++){let key=dayKey(d);if(habitScheduledOn(h,key)){if(hist.has(key))n++;else break}d.setDate(d.getDate()-1)}return n}function habitStats(){let total=0,done=0,streaks=[];let today=dayKey();for(let h of s.habits){streaks.push(habitStreak(h));for(let i=0;i<30;i++){let d=new Date();d.setDate(d.getDate()-i);let key=dayKey(d);if(habitScheduledOn(h,key)){total++;if(habitDone(h,key))done++}}}return {total,done,rate:total?Math.round(done/total*100):0,best:streaks.length?Math.max(...streaks):0}}function habitRow(h,showUnscheduled=false){
+function dayKey(d=new Date()){return dateUtils.dayKey(d)}function weekdayKey(key){return dateUtils.weekdayKey(key)}function habitScheduledOn(h,key){let d=weekdayKey(key);return !h.days||h.days.length===0||h.days.includes(d)}function habitScheduled(h){return habitScheduledOn(h,dayKey())}function habitHistory(h){let hist=Array.isArray(h.history)?h.history.slice():[];if(h.doneDate&&!hist.includes(h.doneDate))hist.push(h.doneDate);return [...new Set(hist.filter(x=>/^\d{4}-\d{2}-\d{2}$/.test(x)))].sort()}function habitDone(h,key=dayKey()){return habitHistory(h).includes(key)}function habitStreak(h){let hist=new Set(habitHistory(h)),d=new Date();if(!hist.has(dayKey(d))){d.setDate(d.getDate()-1);while(!habitScheduledOn(h,dayKey(d))&&!hist.has(dayKey(d))&&d.getTime()>Date.now()-40*86400000)d.setDate(d.getDate()-1)}let n=0;for(let i=0;i<400;i++){let key=dayKey(d);if(habitScheduledOn(h,key)){if(hist.has(key))n++;else break}d.setDate(d.getDate()-1)}return n}function habitStats(){let total=0,done=0,streaks=[];let today=dayKey();for(let h of s.habits){streaks.push(habitStreak(h));for(let i=0;i<30;i++){let d=new Date();d.setDate(d.getDate()-i);let key=dayKey(d);if(habitScheduledOn(h,key)){total++;if(habitDone(h,key))done++}}}return {total,done,rate:total?Math.round(done/total*100):0,best:streaks.length?Math.max(...streaks):0}}function habitRow(h,showUnscheduled=false){
   if(!habitScheduled(h)&&!showUnscheduled)return '';
   let done=habitDone(h);
   const iconGradients = {
