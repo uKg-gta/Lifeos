@@ -52,3 +52,18 @@ test('consolidated light theme keeps the final contrast values', () => {
   assert.match(coral, /--accent:\s*#9a3412/);
   assert.match(slate, /--accent:\s*#334155/);
 });
+
+test('small branding, navigation, and account labels remain readable', () => {
+  const checks = [
+    ['.brand small', /font-size:\\s*11px/],
+    ['.label', /font-size:\\s*11px/],
+    ['.profile small', /font-size:\\s*11px/],
+    ['.eyebrow', /font-size:\\s*11px/],
+    ['.lifeos-auth-gate .auth-brand-kicker', /font-size:\\s*11px/],
+    ['.lifeos-auth-gate .auth-divider small', /font-size:\\s*11px/]
+  ];
+  for (const [selector, expected] of checks) {
+    const rule = rulesFor(selector)[0] || '';
+    assert.match(rule, expected, selector + ' should use an 11px minimum');
+  }
+});
