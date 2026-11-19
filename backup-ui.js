@@ -1,5 +1,5 @@
 (()=>{'use strict';
-function create({getState,getPrefs,setPrefs,normalizeWorkspace,mergeWorkspace,mergePrefs,safe,toast,confirm:inPageConfirm,save,applyPrefs,render,nav,pushCloud,exportData:downloadBackup,storage=localStorage}){
+function create({getState,getPrefs,setPrefs,normalizeWorkspace,mergeWorkspace,mergePrefs,safe,toast,confirm:inPageConfirm,save,applyPrefs,render,nav,pushCloud,storage=localStorage}){
  let pendingBackup=null;
  const $=s=>document.querySelector(s);
  function exportData(){let payload={app:'LifeOS',backupVersion:1,exportedAt:new Date().toISOString(),workspace:getState(),preferences:getPrefs()};let blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download='lifeos-workspace-backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);toast('Workspace backup exported.')}
