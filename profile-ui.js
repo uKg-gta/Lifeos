@@ -5,7 +5,7 @@
   else root.LifeOSProfileUI=api;
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
   function create(deps){
-    const {$,$$,getPrefs,save,toast,safe,safePic,updateDateLabels,nav}=deps;
+    const {$,queryAll,getPrefs,save,toast,safe,safePic,updateDateLabels,nav}=deps;
     function getLifeOSGreeting(){
       const hour=new Date().getHours();
       const period=hour<12?'Good morning':hour<17?'Good afternoon':'Good evening';
@@ -20,9 +20,9 @@
     }
     function applyModuleVisibility(){
       const prefs=getPrefs(),always=['home','settings'];
-      $$('[data-page]').forEach(button=>{const id=button.dataset.page;if(!id)return;button.style.display=!always.includes(id)&&(prefs.hiddenModules||[]).includes(id)?'none':''});
+      queryAll('[data-page]').forEach(button=>{const id=button.dataset.page;if(!id)return;button.style.display=!always.includes(id)&&(prefs.hiddenModules||[]).includes(id)?'none':''});
       $('#moduleToggles').innerHTML=[['tasks','Tasks'],['habits','Habits & routines'],['projects','Goals'],['study','Exams'],['focus','Focus timer'],['library','Library'],['notes','Notes'],['finance','Finance'],['calendar','Calendar']].map(([id,label])=>'<label><input type="checkbox" data-module-toggle="'+id+'" '+(!(prefs.hiddenModules||[]).includes(id)?'checked':'')+'> '+label+'</label>').join('');
-      $$('[data-module-toggle]').forEach(control=>control.onchange=()=>{const id=control.dataset.moduleToggle;const current=getPrefs();current.hiddenModules=current.hiddenModules||[];current.hiddenModules=control.checked?current.hiddenModules.filter(value=>value!==id):[...new Set([...current.hiddenModules,id])];save();applyModuleVisibility();if(!control.checked&&$('#page-'+id)?.classList.contains('active'))nav('home');toast(control.checked?'Module shown in navigation.':'Module hidden; its data is unchanged.')});
+      queryAll('[data-module-toggle]').forEach(control=>control.onchange=()=>{const id=control.dataset.moduleToggle;const current=getPrefs();current.hiddenModules=current.hiddenModules||[];current.hiddenModules=control.checked?current.hiddenModules.filter(value=>value!==id):[...new Set([...current.hiddenModules,id])];save();applyModuleVisibility();if(!control.checked&&$('#page-'+id)?.classList.contains('active'))nav('home');toast(control.checked?'Module shown in navigation.':'Module hidden; its data is unchanged.')});
     }
     function applySummaries(){
       const prefs=getPrefs();
@@ -42,7 +42,7 @@
       const avatar=$('#profileAvatar');avatar.innerHTML=prefs.picture?'<img src="'+prefs.picture+'" alt="Profile picture">':safe(prefs.avatar||'UG');
       $('#profileDisplayName').textContent=prefs.name||'Your workspace';$('#profileNameInput').value=prefs.name||'';$('#profileMottoInput').value=prefs.motto||'';
       $('#profilePageAvatar').innerHTML=prefs.picture?'<img src="'+prefs.picture+'" alt="Profile picture">':safe(prefs.avatar||'UG');$('#profileMotto').textContent=prefs.motto||'Personal workspace';
-      $$('[data-avatar]').forEach(button=>button.classList.toggle('selected',button.dataset.avatar===prefs.avatar&&!prefs.picture));
+      queryAll('[data-avatar]').forEach(button=>button.classList.toggle('selected',button.dataset.avatar===prefs.avatar&&!prefs.picture));
       applyModuleVisibility();applySummaries();updateLifeOSGreeting();updateDateLabels();
     }
     function saveProfile(){const prefs=getPrefs();prefs.name=$('#profileNameInput').value.trim().slice(0,60);prefs.motto=$('#profileMottoInput').value.trim().slice(0,120);save();applyPrefs();toast('Profile saved.')}
