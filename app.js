@@ -476,30 +476,11 @@ function transactionDate(t){let raw=String(t.date||'').trim();if(/^\d{4}-\d{2}-\
 const libraryPageUI=window.LifeOSLibraryPage.create({$, queryAll, getState:()=>s, getBookView:()=>bookView, safe, save, toast, modal, inPageConfirm});
 function libraryPage(){return libraryPageUI.libraryPage()}
 
-function renderProjectCards(){
-  const grid=$('#projectGrid');
-  if(!grid)return;
-  grid.replaceChildren();
-  if(!s.projects.length){
-    const empty=document.createElement('div');empty.className='empty';empty.textContent='No projects yet. Add a project to track a small piece of work.';
-    grid.append(empty);return;
-  }
-  s.projects.forEach(project=>{
-    const card=document.createElement('article');card.className='module goal-card';
-    const heading=document.createElement('div');heading.className='head';
-    const title=document.createElement('b');title.textContent=project.title;
-    const remove=document.createElement('button');remove.type='button';remove.className='textbtn';remove.textContent='Delete';remove.setAttribute('aria-label','Delete project '+project.title);
-    heading.append(title,remove);
-    const detail=document.createElement('div');detail.className='rowsub';detail.textContent=(project.status||'Not started')+' · '+(project.done||0)+' of '+(project.tasks||0)+' linked tasks';
-    card.append(heading,detail);grid.append(card);
-    remove.onclick=()=>{
-      const index=s.projects.findIndex(item=>item.id===project.id);if(index<0)return;
-      const removed=s.projects.splice(index,1)[0];save();renderProjectCards();
-      toast('Project deleted.',()=>{s.projects.splice(Math.min(index,s.projects.length),0,removed);save();renderProjectCards()});
-    };
-  });
-}function projectsPage(){renderProjectCards();let active=s.goals.filter(g=>g.status!=='Completed').length;$('#goalTotal').textContent=s.goals.length;$('#goalCount').textContent=active;$('#goalGrid').innerHTML=s.goals.map(g=>{let subs=g.subgoals||[],done=subs.filter(x=>x.done).length,pct=subs.length?Math.round(done/subs.length*100):0;return `<article class="module goal-card" data-open-goal="${g.id}" tabindex="0"><div class="moduleicon">${g.area==='Studies'?'▤':g.area==='Health'?'◉':'◇'}</div><b>${safe(g.title)}</b><p>${safe(g.desc||'No description added yet.')}</p>${subs.length?`<div class="bar"><div style="width:${pct}%"></div></div><div class="tiny muted">${done} of ${subs.length} sub-goals · ${pct}%</div>`:'<div class="tiny muted">No sub-goals added</div>'}<div class="modulefoot"><span>${safe(g.area)}${g.date?' · '+safe(g.date):' · No target date'}</span><span>${safe(g.status)}</span></div></article>`}).join('')||'<div class="empty">Your long-term goals will appear here. Create your first goal when you are ready.</div>';queryAll('[data-open-goal]').forEach(el=>{let open=()=>openGoal(+el.dataset.openGoal);el.onclick=open;el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open()}}})}
-function openGoal(id){let g=s.goals.find(x=>x.id===id);if(!g)return;let subs=g.subgoals||[],done=subs.filter(x=>x.done).length,pct=subs.length?Math.round(done/subs.length*100):0;$('#modalTitle').textContent=g.title;$('#modalBody').innerHTML=`<div class="form"><div class="pill">${safe(g.area)} · ${safe(g.status)}</div><p>${safe(g.desc||'No description added.')}</p><div class="small muted">Target: ${safe(g.date||'No target date')}</div><div class="bar"><div style="width:${pct}%"></div></div><b>${pct}% progress</b><div class="field"><label>Sub-goals</label>${subs.length?subs.map(x=>`<label class="checkline"><input type="checkbox" data-goal-sub="${x.id}" ${x.done?'checked':''}> ${safe(x.text)}</label>`).join(''):'<p class="tiny muted">No sub-goals for this goal.</p>'}</div><div class="field"><label>Timeline</label>${(g.timeline||[]).map(x=>`<div class="rowsub">${safe(new Date(x.date).toLocaleDateString())} · ${safe(x.text)}</div>`).join('')||'<div class="rowsub">Goal created</div>'}</div><div class="field"><label>Goal status</label><select id="goalStatus"><option ${g.status==='Not started'?'selected':''}>Not started</option><option ${g.status==='Active'?'selected':''}>Active</option><option ${g.status==='Ongoing'?'selected':''}>Ongoing</option><option ${g.status==='Completed'?'selected':''}>Completed</option></select></div><div class="goal-actions"><button class="btn" id="editGoal">Edit goal details</button><button class="btn danger-btn" id="deleteGoal">Delete goal</button></div></div>`;$('#modalSave').textContent='Done';bindModalClose();showModal();$('#modalSave').onclick=()=>{closeModal();save();render()};queryAll('[data-goal-sub]').forEach(cb=>cb.onchange=()=>{let sub=g.subgoals.find(x=>x.id===+cb.dataset.goalSub);sub.done=cb.checked;g.timeline=g.timeline||[];g.timeline.unshift({date:new Date().toISOString(),text:(cb.checked?'Completed: ':'Reopened: ')+sub.text});save();openGoal(id)});$('#goalStatus').onchange=e=>{g.status=e.target.value;g.timeline=g.timeline||[];g.timeline.unshift({date:new Date().toISOString(),text:'Goal marked '+g.status.toLowerCase()});save();openGoal(id)};$('#editGoal').onclick=()=>modal('goal',g);$('#deleteGoal').onclick=()=>{inPageConfirm('Delete goal',`Delete goal “${g.title}”? Its sub-goals and timeline will also be removed.`,()=>{let i=s.goals.findIndex(x=>x.id===g.id);if(i<0)return;let removed=s.goals.splice(i,1)[0];closeModal();save();render();toast('Goal deleted.',()=>s.goals.splice(Math.min(i,s.goals.length),0,removed));},true);}}
+const projectsPageUI=window.LifeOSProjectsPage.create({$, queryAll, getState:()=>s, safe, save, render, toast, modal, inPageConfirm, bindModalClose, showModal, closeModal});
+function renderProjectCards(){return projectsPageUI.renderProjectCards()}
+function projectsPage(){return projectsPageUI.projectsPage()}
+function openGoal(id){return projectsPageUI.openGoal(id)}
+
 const calendarPageUI=window.LifeOSCalendarPage.create({$, getState:()=>s, dateLabel, addDays, dayKey, safe, getWeekOffset:()=>weekOffset});
 function calendarPage(){return calendarPageUI.calendarPage()}
 
