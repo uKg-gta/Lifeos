@@ -78,28 +78,24 @@
   --bg-gradient: radial-gradient(circle at 10% 10%, rgba(67, 135, 246, 0.06), transparent 50%), radial-gradient(circle at 90% 90%, rgba(147, 102, 249, 0.04), transparent 50%);
   --panel: rgba(255, 255, 255, 0.92);
   --panel-solid: #ffffff;
-  --panel2: #f1f5f9;
+  --panel2: #eef2f7;
   --panel3: #e2e8f0;
-  --line: rgba(15, 23, 42, 0.08);
-  --line-hover: rgba(15, 23, 42, 0.16);
+  --line: rgba(15, 23, 42, 0.16);
+  --line-hover: rgba(15, 23, 42, 0.28);
   --text: #0f172a;
-  --text-muted: #64748b;
-  --muted: #64748b;
+  --text-muted: #475569;
+  --muted: #475569;
   --coral: #2563eb;
-  --mint: #059669;
-  --blue: #3b82f6;
-  --yellow: #d97706;
-  --red: #dc2626;
-  --shadow-sm: 0 4px 14px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.12);
+  --mint: #047857;
+  --blue: #1d4ed8;
+  --yellow: #92400e;
+  --red: #b91c1c;
+  --shadow-sm: 0 4px 14px rgba(15, 23, 42, 0.08);
+  --shadow-md: 0 10px 30px rgba(15, 23, 42, 0.12);
+  --shadow-lg: 0 20px 60px rgba(15, 23, 42, 0.16);
   color-scheme: light;
 }
 
-[data-theme="light"][data-accent="amber"] { --coral: #d97706; --accent: #d97706; --blue: #f59e0b; --accent-glow: rgba(217, 119, 6, 0.25); --accent-subtle: rgba(217, 119, 6, 0.1); }
-[data-theme="light"][data-accent="green"] { --coral: #059669; --accent: #059669; --blue: #10b981; --accent-glow: rgba(5, 150, 105, 0.25); --accent-subtle: rgba(5, 150, 105, 0.1); }
-[data-theme="light"][data-accent="coral"] { --coral: #c2410c; --accent: #c2410c; --blue: #ea580c; --accent-glow: rgba(194, 65, 12, 0.25); --accent-subtle: rgba(194, 65, 12, 0.1); }
-[data-theme="light"][data-accent="slate"] { --coral: #475569; --accent: #475569; --blue: #64748b; --accent-glow: rgba(71, 85, 105, 0.25); --accent-subtle: rgba(71, 85, 105, 0.1); }
 
 [data-density="compact"] { --density: 13px; }
 [data-density="comfortable"] { --density: 18px; }
@@ -176,10 +172,10 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   flex-shrink: 0;
 }
 .brand b { font-size: 18px; font-weight: 750; letter-spacing: -0.03em; }
-.brand small { display: block; font-size: 9.5px; font-weight: 600; letter-spacing: 1.6px; color: var(--muted); text-transform: uppercase; margin-top: 1px; }
+.brand small { display: block; font-size: 11px; font-weight: 600; letter-spacing: 1.6px; color: var(--muted); text-transform: uppercase; margin-top: 1px; }
 
 .label {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 1.8px;
   text-transform: uppercase;
@@ -265,7 +261,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   overflow: hidden;
 }
 .avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
-.profile small { display: block; color: var(--muted); font-size: 10.5px; }
+.profile small { display: block; color: var(--muted); font-size: 11px; }
 
 .collapse {
   display: flex;
@@ -322,7 +318,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   z-index: 8;
 }
 .eyebrow {
-  font-size: 10px;
+  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 1.8px;
   color: var(--accent);
@@ -1260,22 +1256,6 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.45));
 }
 
-/* Light theme contrast adjustments */
-[data-theme="light"] {
-  --panel2: #eef2f7;
-  --panel3: #e2e8f0;
-  --line: rgba(15, 23, 42, 0.16);
-  --line-hover: rgba(15, 23, 42, 0.28);
-  --text-muted: #475569;
-  --muted: #475569;
-  --mint: #047857;
-  --blue: #1d4ed8;
-  --yellow: #92400e;
-  --red: #b91c1c;
-  --shadow-sm: 0 4px 14px rgba(15, 23, 42, 0.08);
-  --shadow-md: 0 10px 30px rgba(15, 23, 42, 0.12);
-  --shadow-lg: 0 20px 60px rgba(15, 23, 42, 0.16);
-}
 [data-theme="light"][data-accent="amber"] {
   --coral: #b45309;
   --accent: #b45309;
@@ -1506,7 +1486,7 @@ html[data-theme="light"] .task-btn-danger:hover{color:#991b1b;background:rgba(22
   line-height: 1;
 }
 .lifeos-auth-gate .auth-brand-kicker {
-  font-size: 9.5px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 2px;
   color: var(--accent);
@@ -1691,7 +1671,7 @@ html[data-theme="light"] .task-btn-danger:hover{color:#991b1b;background:rgba(22
   flex: 1;
 }
 .lifeos-auth-gate .auth-divider small {
-  font-size: 9.5px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 1.6px;
   color: var(--muted);
