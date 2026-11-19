@@ -88,3 +88,15 @@ test('metric number dark gradient and light text reset rely on cascade',()=>{
   assert.match(light,/-webkit-text-fill-color:\s*var\(--text\);/);
   assert.doesNotMatch(dark+light,/!important/i);
 });
+
+test('progress bar and active mobile navigation styles rely on source order and theme specificity',()=>{
+  const get=(selector,from=0)=>{const i=html.indexOf(selector,from);assert.ok(i>=0,selector+' should exist');return html.slice(i,html.indexOf('}',i)+1);};
+  const barBase=get('.bar div {');
+  const barAccent=get('.bar div {',html.indexOf('.bar div {')+1);
+  const navBase=get('.bottomnav button.active {',html.indexOf('.bottomnav button.active {')+1);
+  const navLight=get('[data-theme="light"] .bottomnav button.active {');
+  assert.match(barAccent,/linear-gradient\(90deg, #10b981 0%, #f59e0b 100%\)/);
+  assert.match(navBase,/color:\s*#f59e0b;/);
+  assert.match(navLight,/color:\s*var\(--accent\);/);
+  assert.doesNotMatch(barBase+barAccent+navBase+navLight,/!important/i);
+});
