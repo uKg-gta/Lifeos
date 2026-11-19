@@ -518,7 +518,7 @@ function render(){if(rollover())save();refreshSubjectControls();home();tasksPage
 const searchUI=window.LifeOSSearchUI.create({$, queryAll, getState:()=>s, safe, nav, closeSearchModal, setSearchReturnFocus:target=>modalUI.setSearchReturnFocus(target)});
 function search(){return searchUI.search()}
 
-const backupUI=window.LifeOSBackupUI.create({getState:()=>s,getPrefs:()=>prefs,setPrefs:value=>{prefs=value},normalizeWorkspace,mergeWorkspace,mergePrefs,safe,toast,confirm:inPageConfirm,save,applyPrefs,render,nav,pushCloud});
+const backupUI=window.LifeOSBackupUI.create({getState:()=>s,getPrefs:()=>prefs,setPrefs:value=>{prefs=value},normalizeWorkspace,mergeWorkspace,mergePrefs,safe,toast,confirm:inPageConfirm,save,applyPrefs,render,nav,pushCloud,restorePrevious:(workspace,preferences,markDirty)=>{s=workspace;prefs=preferences;if(markDirty){dirty=true;writeMeta({user:cloudUser?.id,revision:baseRevision,dirty:true})}writeCache()}});
 function exportData(){return backupUI.exportData()}
 function backupPreview(file){return backupUI.backupPreview(file)}
 function restoreBackup(mode){return backupUI.restoreBackup(mode)}
