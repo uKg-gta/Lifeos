@@ -36,7 +36,7 @@ test('Focus form labels are explicitly associated with their controls', () => {
 test('built-in avatar choices have descriptive accessible names', () => {
   const choices = [...html.matchAll(/<button[^>]*data-profile-avatar="([^"]+)"[^>]*>/g)];
   assert.equal(choices.length, 5);
-  for (const [, avatarButton] of choices) {
+  for (const [avatarButton] of choices) {
     assert.match(avatarButton, /aria-label="Use (?:initials|circle|star|leaf|sun) avatar"/);
   }
 });
