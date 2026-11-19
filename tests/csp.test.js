@@ -3,23 +3,22 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const crypto = require('node:crypto');
 
-test('Content Security Policy hash matches the exact inline application script', () => {
-  const html = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
-  const startTag = '<script>';
-  const endTag = '</script>';
-  const scriptStart = html.indexOf(startTag);
-  assert.notEqual(scriptStart, -1, 'expected the inline application script');
-  const contentStart = scriptStart + startTag.length;
-  const scriptEnd = html.indexOf(endTag, contentStart);
-  assert.notEqual(scriptEnd, -1, 'expected the inline application script to close');
-  assert.equal(html.indexOf(startTag, contentStart), -1, 'expected exactly one inline application script');
+const html = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
+const app = fs.readFileSync(path.join(__dirname, '../app.js'), 'utf8');
 
-  const inlineScript = html.slice(contentStart, scriptEnd);
-  const policy = html.match(/script-src[^;]*'sha256-([^']+)'/);
-  assert.ok(policy, 'expected a SHA-256 script hash in the Content Security Policy');
+test('application logic is loaded from a same-origin external script after its dependencies', () => {
+  const supabase = html.indexOf('<script src="./vendor/supabase.js"');
+  const syncCore = html.indexOf('<script src="./sync-core.js"');
+  const appScript = html.indexOf('<script src="./app.js"');
+  assert.ok(supabase >= 0 && syncCore > supabase && appScript > syncCore);
+  assert.doesNotMatch(html, /<script>/, 'index.html should not contain inline scripts');
+  assert.ok(app.includes('function render()') || app.includes('function applyPrefs()'), 'application logic should be present in app.js');
+});
 
-  const actual = crypto.createHash('sha256').update(inlineScript, 'utf8').digest('base64');
-  assert.equal(policy[1], actual, 'CSP hash must be regenerated whenever inline application code changes');
+test('CSP permits same-origin scripts without enabling inline JavaScript', () => {
+  const policy = html.match(/script-src([^;]*)/);
+  assert.ok(policy, 'script-src directive should exist');
+  assert.match(policy[1], /'self'/);
+  assert.doesNotMatch(policy[1], /unsafe-inline|sha256-/);
 });
