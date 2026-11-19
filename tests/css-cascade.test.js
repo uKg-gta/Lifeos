@@ -111,4 +111,8 @@ test('application styles are consolidated into one ordered style block',()=>{
   assert.ok(base>=0&&weekday>base&&auth>weekday,'original CSS block order must be preserved');
   assert.match(css,/@media\s*\(max-width:\s*760px\)/);
   assert.match(css,/@media\s*\(prefers-reduced-motion:\s*reduce\)/);
+  assert.match(html,/<meta http-equiv="Content-Security-Policy"/);
+  assert.match(html,/<script src="\.\/vendor\/supabase\.js"/);
+  assert.match(html,/<script src="\.\/sync-core\.js"/);
+  assert.match(html,/id="authGate"/);
 });
