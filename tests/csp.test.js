@@ -7,7 +7,7 @@ const crypto = require('node:crypto');
 
 test('Content Security Policy hash matches the exact inline application script', () => {
   const html = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
-  const inlineScripts = [...html.matchAll(/<script>([\\s\\S]*?)<\\/script>/g)];
+  const inlineScripts = [...html.matchAll(/<script>([\s\\S]*?)<\/script>/g)];
   assert.equal(inlineScripts.length, 1, 'expected one hash-protected inline application script');
 
   const policy = html.match(/script-src[^;]*'sha256-([^']+)'/);
