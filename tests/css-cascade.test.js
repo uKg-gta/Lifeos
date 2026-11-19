@@ -46,8 +46,8 @@ test('habit icon theme styles rely on selector specificity, not important flags'
 
 test('productivity score card theme overrides use the normal cascade',()=>{
   const blocks=[...html.matchAll(/\.score(?:::after)?\s*\{([^}]*)\}|\[data-theme="light"\]\s+\.score(?:::after)?\s*\{([^}]*)\}/g)];
-  const find=(selector)=> {
-    const start=html.indexOf(selector);
+  const find=(selector, from=0)=> {
+    const start=html.indexOf(selector,from);
     assert.ok(start>=0,selector+' rule should exist');
     const end=html.indexOf('}',start);
     return html.slice(start,end+1);
