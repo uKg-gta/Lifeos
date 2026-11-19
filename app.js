@@ -5,7 +5,7 @@ const formatUtils=window.LifeOSFormatUtils;
 const dateUtils=window.LifeOSDateUtils;
 const now=new Date(), dateLabel=(d=new Date())=>dateUtils.dateLabel(d,prefs.dateFormat), safe=s=>formatUtils.escapeHtml(s);
 const seed=()=>({tasks:[],habits:[],routines:[],notes:[],sessions:[],syllabus:[],transactions:[],budgets:[],resources:[],goals:[],projects:[],investments:[],assets:[],liabilities:[],exams:[],subjects:[],studyToday:0,studyWeek:0,timer:{mode:'countdown',duration:1500,remaining:1500,running:false,startedAt:null,paused:false}});
-let s=seed(), prefs={theme:'dark',accent:'amber',density:'comfortable',font:'default',name:'',motto:'',avatar:'UG',picture:'',hiddenModules:[],summaries:{tasks:true,study:true,habits:true},weekStart:1,clock:'12',dateFormat:'dmy',budgetResetDay:1}, pendingBackup=null, taskView='all',bookView='cards',weekOffset=0,financeMonth=null,toastTimer=null;
+let s=seed(), prefs={theme:'dark',accent:'amber',density:'comfortable',font:'default',name:'',motto:'',avatar:'UG',picture:'',hiddenModules:[],summaries:{tasks:true,study:true,habits:true},weekStart:1,clock:'12',dateFormat:'dmy',budgetResetDay:1}, taskView='all',bookView='cards',weekOffset=0,financeMonth=null,toastTimer=null;
 const weight=p=>formatUtils.priorityWeight(p), todayTasks=()=>s.tasks.filter(t=>t.date==='today'), score=()=>{let a=todayTasks(),total=a.reduce((n,t)=>n+weight(t.priority),0);return total?Math.round(a.filter(t=>t.status==='done').reduce((n,t)=>n+weight(t.priority),0)/total*100):null}, mins=m=>formatUtils.formatMinutes(m), money=n=>formatUtils.formatRupees(n), fmtsec=n=>formatUtils.formatClockSeconds(n);
 let supabase=null, cloudUser=null, cloudReady=false, cloudTimer=null, applyingRemote=false, lastCloudPayload='', baseStamp=null, baseRevision=0, pushingStamp=null, pushing=false, pushQueued=false, pushPromise=null, pendingCloudConflict=null, activating=false, retryTimer=null, retryCount=0, dirty=false, lastDay=dayKey();
 /* ===== Data hygiene, sync and auth (rewritten) ===== */
@@ -518,44 +518,10 @@ function render(){if(rollover())save();refreshSubjectControls();home();tasksPage
 const searchUI=window.LifeOSSearchUI.create({$, queryAll, getState:()=>s, safe, nav, closeSearchModal, setSearchReturnFocus:target=>modalUI.setSearchReturnFocus(target)});
 function search(){return searchUI.search()}
 
-function exportData(){let payload={app:'LifeOS',backupVersion:1,exportedAt:new Date().toISOString(),workspace:s,preferences:prefs};let blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download='lifeos-workspace-backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);toast('Workspace backup exported.')}
-async function resetWorkspaceSafely(){
-  const oldWorkspace=JSON.parse(JSON.stringify(s));
-  s=seed();save();render();
-  const ok=await pushCloud();
-  if(!ok){
-    s=oldWorkspace;dirty=true;writeCache();writeMeta({user:cloudUser?.id,revision:baseRevision,dirty:true});
-    render();toast('Reset was not saved to the cloud. Your previous local workspace has been restored.');
-    return;
-  }
-  render();nav('home');toast('Workspace reset and saved to the cloud. Preferences were kept.');
-}
-function reset(){inPageConfirm('Reset workspace','This permanently clears your LifeOS workspace in the cloud and on all synced devices. Continue?',()=>{inPageConfirm('Final confirmation','Delete tasks, notes, goals, study records, finance records and all other workspace data?',()=>resetWorkspaceSafely(),true);},true);}
-function resetPreferences(){inPageConfirm('Reset preferences','Reset appearance, profile and planning preferences? Workspace records will remain unchanged.',()=>{prefs={theme:'dark',accent:'amber',density:'comfortable',font:'default',name:'',motto:'',avatar:'UG',picture:'',hiddenModules:[],summaries:{tasks:true,study:true,habits:true},weekStart:1,clock:'12',dateFormat:'dmy',studyTargetMins:180};save();applyPrefs();render();toast('Preferences reset. Your records are unchanged.');});}
-async function compressImage(file){if(!file||!file.type||!file.type.startsWith('image/'))throw new Error('Choose an image file.');if(file.size>20*1024*1024)throw new Error('Choose an image smaller than 20 MB.');let bitmap;try{if('createImageBitmap' in window)bitmap=await createImageBitmap(file)}catch(e){}let canvas=document.createElement('canvas'),side=256;canvas.width=side;canvas.height=side;let ctx=canvas.getContext('2d');if(!ctx)throw new Error('Image processing is not available in this browser.');if(bitmap){let scale=Math.max(side/bitmap.width,side/bitmap.height),w=bitmap.width*scale,h=bitmap.height*scale;ctx.drawImage(bitmap,(side-w)/2,(side-h)/2,w,h);bitmap.close?.()}else{let url=URL.createObjectURL(file);try{let img=await new Promise((resolve,reject)=>{let im=new Image();im.onload=()=>resolve(im);im.onerror=()=>reject(new Error('This image could not be opened. Try saving it as JPG or PNG.'));im.src=url});let scale=Math.max(side/img.naturalWidth,side/img.naturalHeight),w=img.naturalWidth*scale,h=img.naturalHeight*scale;ctx.drawImage(img,(side-w)/2,(side-h)/2,w,h)}finally{URL.revokeObjectURL(url)}}let data=canvas.toDataURL('image/jpeg',0.72);if(data.length>300000)throw new Error('Could not compress this picture enough. Try a smaller image.');return data}
-function validBackup(x){let w=x?.workspace||x;if(!w||typeof w!=='object'||!Array.isArray(w.tasks)||!Array.isArray(w.habits))return false;for(let k of ['routines','notes','sessions','syllabus','transactions','budgets','resources','goals','projects','investments','assets','liabilities','exams','subjects'])if(w[k]!==undefined&&!Array.isArray(w[k]))return false;return true}
-function backupArrays(w){return ['tasks','habits','routines','notes','sessions','syllabus','transactions','budgets','resources','goals','projects','investments','assets','liabilities','exams','subjects'].filter(k=>Array.isArray(w[k]))}
-function backupPreview(file){let fr=new FileReader();fr.onerror=()=>toast('Could not read the backup file.');fr.onload=()=>{try{let x=JSON.parse(fr.result);if(!validBackup(x))throw new Error('This does not look like a valid LifeOS backup.');let w=x.workspace||x;pendingBackup={data:x,fileName:file.name};let keys=backupArrays(w),counts=keys.reduce((a,k)=>a+(w[k]?.length||0),0);let current=keys.reduce((a,k)=>a+(s[k]?.length||0),0);let conflicts=keys.reduce((a,k)=>a+(w[k]||[]).filter(r=>r&&r.id!=null&&(s[k]||[]).some(q=>q.id===r.id)).length,0);$('#restorePreview').style.display='block';$('#restorePreview').innerHTML=`<b>Backup validated: ${safe(file.name)}</b><p>${keys.length} data categories · ${counts} imported records · ${current} current records · ${conflicts} matching record IDs to review.</p><div class="setting-control"><button class="btn" id="restoreReplace">Replace workspace</button><button class="btn" id="restoreMerge">Merge records</button><button class="textbtn" id="cancelRestore">Cancel</button></div><div class="settings-help">Replace overwrites current workspace records. Merge updates records with matching IDs and appends new ones; records without IDs are appended. A safety copy is downloaded before either action.</div>`;$('#restoreReplace').onclick=()=>restoreBackup('replace');$('#restoreMerge').onclick=()=>restoreBackup('merge');$('#cancelRestore').onclick=()=>{pendingBackup=null;$('#restorePreview').style.display='none';$('#importFile').value=''}}catch(e){pendingBackup=null;$('#restorePreview').style.display='block';$('#restorePreview').textContent=e.message||'Invalid backup file.'}};fr.readAsText(file)}
-function restoreBackup(mode){if(!pendingBackup)return;let x=pendingBackup.data,w=x.workspace||x;if(!validBackup(x)){toast('Backup validation failed.');return}let keys=backupArrays(w),conflicts=keys.reduce((a,k)=>a+(w[k]||[]).filter(r=>r&&r.id!=null&&(s[k]||[]).some(q=>q.id===r.id)).length,0);const doRestore=async()=>{
-  exportData();const oldS=JSON.parse(JSON.stringify(s)),oldPrefs=JSON.parse(JSON.stringify(prefs));
-  try{
-    let next;
-    if(mode==='replace')next=normalizeWorkspace(w);
-    else{next=mergeWorkspace(JSON.parse(JSON.stringify(s)),normalizeWorkspace(w));next.timer=s.timer}
-    s=next;if(x.preferences&&typeof x.preferences==='object')prefs=mergePrefs(prefs,x.preferences);
-    try{localStorage.setItem('lifeos-review-v2',JSON.stringify(s));localStorage.setItem('lifeos-review-prefs',JSON.stringify(prefs))}
-    catch(err){s=oldS;prefs=oldPrefs;throw new Error('Browser storage is full. Existing workspace was preserved; export data or remove the profile picture before retrying.')}
-    pendingBackup=null;$('#restorePreview').style.display='none';$('#importFile').value='';
-    save();applyPrefs();render();nav('home');
-    const ok=await pushCloud();
-    if(!ok){
-      s=oldS;prefs=oldPrefs;dirty=true;writeCache();writeMeta({user:cloudUser?.id,revision:baseRevision,dirty:true});
-      applyPrefs();render();toast('Restore was not saved to the cloud. Your previous local workspace has been restored.');
-      return;
-    }
-    toast(mode==='replace'?'Workspace restored and saved to the cloud.':'Backup merged and saved to the cloud.');
-  }catch(e){s=oldS;prefs=oldPrefs;writeCache();applyPrefs();render();toast(e.message||'Restore failed. Existing workspace was preserved.')}
-};if(mode==='merge'){inPageConfirm('Merge backup',`Merge ${pendingBackup.fileName}? Preview: ${keys.map(k=>`${k}: ${(w[k]||[]).length} imported`).join(', ')}. ${conflicts} matching IDs will be updated; records without IDs will be appended. A safety backup will be downloaded first. Continue?`,doRestore);}else{inPageConfirm('Replace workspace',`Replace the current workspace with ${pendingBackup.fileName}? This cannot be undone unless you have a backup.`,doRestore,true);}}
+const backupUI=window.LifeOSBackupUI.create({getState:()=>s,getPrefs:()=>prefs,setPrefs:value=>{prefs=value},normalizeWorkspace,mergeWorkspace,mergePrefs,safe,toast,confirm:inPageConfirm,save,applyPrefs,render,nav,pushCloud});
+function exportData(){return backupUI.exportData()}
+function backupPreview(file){return backupUI.backupPreview(file)}
+function restoreBackup(mode){return backupUI.restoreBackup(mode)}
 
 const profileUI=window.LifeOSProfileUI.create({$, queryAll, getPrefs:()=>prefs, save, toast, safe, safePic, updateDateLabels, nav});
 function saveProfile(){profileUI.saveProfile()}
