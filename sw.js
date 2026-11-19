@@ -20,6 +20,7 @@ const APP_SHELL = [
   './calendar-page.js',
   './library-page.js',
   './projects-page.js',
+  './finance-page.js',
   './backup-ui.js',
   './app.js',
   './vendor/supabase.js',
