@@ -85,6 +85,6 @@ test('task and row layout utilities remain defined only in their shared base rul
   assert.equal((css.match(/\.taskname\s*,\s*\.rowtitle/g) || []).length, 1);
   const layout = rulesFor('.taskmain, .rowmain')[0] || '';
   const titles = rulesFor('.taskname, .rowtitle')[0] || '';
-  assert.match(layout, /min-width:\\s*0/);
-  assert.match(titles, /overflow-wrap:\\s*anywhere/);
+  assert.match(layout, /min-width:\s*0/);
+  assert.match(titles, /overflow-wrap:\s*anywhere/);
 });
