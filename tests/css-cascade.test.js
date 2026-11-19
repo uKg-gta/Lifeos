@@ -116,3 +116,12 @@ test('application styles are consolidated into one ordered style block',()=>{
   assert.match(html,/<script src="\.\/sync-core\.js"/);
   assert.match(html,/id="authGate"/);
 });
+
+test('static page markup uses CSS classes instead of inline style attributes',()=>{
+  assert.doesNotMatch(html,/<[^>]+\sstyle\s*=/i,'static HTML should not carry inline style attributes');
+  assert.match(html,/<button id="continueOffline" class="btn u-full-width u-mt-10"/);
+  assert.match(html,/<div class="card u-mt-15"/);
+  for(const cls of ['u-full-width','u-flex-end-between','u-grid-auto-290','u-timer-ring-large','u-profile-avatar','u-visually-hidden-file']){
+    assert.match(html,new RegExp('\\.'+cls+'\\s*\\{'),cls+' class should be defined');
+  }
+});
