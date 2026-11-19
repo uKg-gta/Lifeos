@@ -19,7 +19,7 @@ test('static application template styles are represented by CSS classes',()=>{
   }
 });
 test('runtime-generated values retain their dynamic inline styles',()=>{
-  assert.match(habit,/style="background:'\\+style\\[0\\]\\+'!important;border-color:'\\+style\\[1\\]\\+'!important"/);
+  assert.ok(habit.includes("style=\"background:'+style[0]+'!important;border-color:'+style[1]+'!important\""));
   assert.match(app,/style="width:\$\{pct\}%"/);
   assert.match(app,/style="display:\$\{dsel===/);
 });
