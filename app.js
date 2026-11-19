@@ -323,10 +323,13 @@ async function activateSession(session){
       status='Offline: this device keeps working and will sync after reconnecting.';
     }else if(remote){
       const remoteSnapshot={workspace:normalizeWorkspace(remote.data.workspace),preferences:mergePrefs(defaultPrefs(),remote.data.preferences)},remoteSer=JSON.stringify(remoteSnapshot),remoteRevision=Number(remote.revision)||0;
-      if((cached&&latestMeta.dirty)||localChanged){
+      // A device cache without a recorded cloud baseline is not safe to discard.
+      // Treat it as local-only data and merge it with the remote workspace, even
+      // when its dirty flag was never set by an earlier offline session.
+      if((cached&&(!latestMeta.dirty||latestMeta.dirty))||localChanged){
         const localSnapshot=liveSnapshot,storedBase=meta.user===nextUser.id?readBaseSnapshot():null;
-        if(!storedBase&&latestMeta.dirty){const stamp=latestMeta.localUpdatedAt||logicalNow();window.LifeOSSyncCore.stampWorkspaceChanges(null,localSnapshot.workspace,stamp)}
-        const baseSnapshot=storedBase?{workspace:normalizeWorkspace(storedBase.workspace),preferences:mergePrefs(defaultPrefs(),storedBase.preferences)}:(latestMeta.dirty?{workspace:normalizeWorkspace({}),preferences:{}}:activationStartSnapshot);
+        if(!storedBase){const stamp=latestMeta.localUpdatedAt||logicalNow();window.LifeOSSyncCore.stampWorkspaceChanges(null,localSnapshot.workspace,stamp)}
+        const baseSnapshot=storedBase?{workspace:normalizeWorkspace(storedBase.workspace),preferences:mergePrefs(defaultPrefs(),storedBase.preferences)}:{workspace:normalizeWorkspace({}),preferences:defaultPrefs()};
         const merged=window.LifeOSSyncCore.mergeSnapshots(baseSnapshot,localSnapshot,remoteSnapshot,{localFallbackTime:latestMeta.localUpdatedAt||logicalNow(),remoteFallbackTime:stampMs(remote.updated_at)});
         s=normalizeWorkspace(merged.workspace);prefs=mergePrefs(defaultPrefs(),merged.preferences);baseRevision=remoteRevision;baseStamp=remote.updated_at||null;lastCloudPayload=remoteSer;writeBaseSnapshot(remoteSnapshot);
         dirty=JSON.stringify({workspace:s,preferences:prefs})!==remoteSer;status=dirty?'Merged this device with the latest cloud entries; syncing…':'Cloud entries are up to date.';
