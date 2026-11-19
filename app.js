@@ -270,13 +270,22 @@ function handleSignedOut(msg){
 }
 async function startCloud(){
   const gate=$('#authGate'),msg=$('#authMessage');
+  // Bind the controls before checking the Supabase SDK. If the SDK fails to load,
+  // the button must still respond with a visible error instead of doing nothing.
+  const startGoogleSignIn=async()=>{
+    if(!supabase){await startCloud();if(!supabase)return}
+    msg.textContent='Opening Google sign-in…';
+    try{
+      const {error}=await supabase.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.href.split('#')[0]}});
+      if(error)msg.textContent='Sign-in failed: '+error.message;
+    }catch(error){msg.textContent='Sign-in failed: '+(error?.message||'Please reload and try again.')}
+  };
+  $('#googleSignIn').onclick=startGoogleSignIn;
+  $('#connectCloudBtn').onclick=startGoogleSignIn;
   $('#continueOffline').onclick=()=>{offlineModeChosen=true;gate.style.display='none';setSync('Offline mode. Changes are saved on this device and will sync after you connect Google.')};
   try{
     if(!window.supabase?.createClient)throw new Error('Could not load the Supabase client. Check your internet connection and reload.');
     if(!supabase)supabase=window.supabase.createClient('https://dtnyyqnyfksxvgedswhj.supabase.co','sb_publishable_-Bppvb1O6mYvca2y8GNFXQ_m0adWMEh');
-    // Sign-in button and auth listener are attached up front, so they also work after signing out of a session that was already active on load.
-    const startGoogleSignIn=async()=>{if(!supabase){await startCloud();if(!supabase)return}msg.textContent='Opening Google sign-in…';const {error}=await supabase.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.href.split('#')[0]}});if(error)msg.textContent='Sign-in failed: '+error.message};
-    $('#googleSignIn').onclick=startGoogleSignIn;$('#connectCloudBtn').onclick=startGoogleSignIn;
     if(!authSubscription){
       const {data:{subscription}}=supabase.auth.onAuthStateChange((event,session)=>{
         if(session&&event==='SIGNED_IN')setTimeout(()=>activateSession(session),0);
