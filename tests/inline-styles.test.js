@@ -5,6 +5,7 @@ const fs=require('node:fs');
 const path=require('node:path');
 const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
 const app=fs.readFileSync(path.join(__dirname,'../app.js'),'utf8');
+const habit=fs.readFileSync(path.join(__dirname,'../habit-page.js'),'utf8');
 test('static application template styles are represented by CSS classes',()=>{
   assert.doesNotMatch(app,/style="font-size:13\.5px/);
   assert.doesNotMatch(app,/style="font-size:12px;font-weight:600/);
@@ -18,7 +19,7 @@ test('static application template styles are represented by CSS classes',()=>{
   }
 });
 test('runtime-generated values retain their dynamic inline styles',()=>{
-  assert.match(app,/style="background:\$\{bg\}!important;border-color:\$\{bd\}!important"/);
+  assert.match(habit,/style="background:'\\+style\\[0\\]\\+'!important;border-color:'\\+style\\[1\\]\\+'!important"/);
   assert.match(app,/style="width:\$\{pct\}%"/);
   assert.match(app,/style="display:\$\{dsel===/);
 });
