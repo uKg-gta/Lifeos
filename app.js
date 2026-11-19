@@ -270,6 +270,24 @@ function handleSignedOut(msg){
 }
 async function startCloud(){
   const gate=$('#authGate'),msg=$('#authMessage');
+  // Keep sign-out available independently of cloud activation or sync health.
+  // Signing out must not require a successful save and must never clear local data.
+  $('#signOutBtn').onclick=async()=>{
+    if(!supabase){toast('Cloud client is unavailable. Your local workspace is unchanged.');return}
+    const btn=$('#signOutBtn');btn.disabled=true;
+    try{
+      const {error}=await supabase.auth.signOut();
+      if(error)throw error;
+      if(cloudUser)handleSignedOut('Signed out. Your saved workspace remains on this device.');
+      else{
+        $('#accountStatus').textContent='On this device';
+        $('#accountEmail').textContent='Signed out. Your saved workspace remains on this device.';
+        $('#connectCloudBtn').hidden=false;btn.hidden=true;
+        setSync(dirty?'Signed out. Unsynced changes remain saved on this device.':'Signed out. Your workspace remains saved on this device.');
+      }
+    }catch(error){toast('Could not sign out: '+(error?.message||'Please retry.'))}
+    finally{btn.disabled=false}
+  };
   // Bind the controls before checking the Supabase SDK. If the SDK fails to load,
   // the button must still respond with a visible error instead of doing nothing.
   const startGoogleSignIn=async()=>{
@@ -383,11 +401,14 @@ async function activateSession(session){
         try{applyRemoteRow(payload.new)}catch(e){console.error(e)}
       }).subscribe();
   }catch(e){
-    cloudReady=false;console.error(e);
-    $('#accountStatus').textContent='Offline';$('#connectCloudBtn').hidden=false;$('#signOutBtn').hidden=true;
-    setSync('Could not reach the cloud. Your device copy is still available and will sync when connected.');
+    cloudReady=false;console.error('LifeOS cloud activation failed:',e);
+    $('#accountStatus').textContent='Offline';$('#connectCloudBtn').hidden=false;
+    // Keep sign-out available even when activation fails; it never clears local data.
+    $('#signOutBtn').hidden=!cloudUser;
+    const detail=String(e?.message||e||'Unknown activation error');
+    setSync('Cloud activation failed: '+detail);
     $('#authGate').style.display=initialLocalCachePresent||offlineModeChosen?'none':'flex';
-    $('#authMessage').textContent='Cloud connection is unavailable. Continue offline or connect when online.';
+    $('#authMessage').textContent='Cloud activation failed: '+detail;
   }finally{activating=false}
 }
 /* ===== end rewritten block ===== */
