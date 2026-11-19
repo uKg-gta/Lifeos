@@ -259,6 +259,58 @@ async function syncNow(){
   try{const row=await fetchRemote();if(row)applyRemoteRow(row)}catch(e){console.warn('LifeOS refresh failed:',e)}
 }
 
+function preserveForeignLocalCache(meta){
+  const sourceUser=String(meta?.user||'unknown').replace(/[^a-zA-Z0-9_-]/g,'_');
+  const recoveryKey='lifeos-recovery-'+sourceUser+'-'+Date.now();
+  const recovery={
+    sourceUserId:meta?.user||null,
+    savedAt:new Date().toISOString(),
+    workspace:localStorage.getItem('lifeos-review-v2'),
+    preferences:localStorage.getItem('lifeos-review-prefs'),
+    cloudBase:localStorage.getItem(BASE_KEY),
+    syncMeta:localStorage.getItem(META_KEY)
+  };
+  try{
+    // Never replace an existing recovery copy; every account switch gets its own archive.
+    localStorage.setItem(recoveryKey,JSON.stringify(recovery));
+    return recoveryKey;
+  }catch(error){
+    console.error('LifeOS could not preserve the previous account cache:',error);
+    throw new Error('Could not preserve this device’s previous workspace. No local data was changed. Free some device storage and retry.');
+  }
+}
+async function signOutFromLifeOS(){
+  const btn=$('#signOutBtn');
+  if(!supabase){toast('Cloud client is unavailable. Your local workspace is unchanged.');return}
+  if(btn?.disabled)return;
+  const user=cloudUser,wasDirty=dirty,wasCloudReady=cloudReady,meta=readMeta();
+  if(user){
+    // Persist the latest local snapshot before asking Supabase to end the session.
+    if(!writeCache()){toast('Could not save the local workspace. Sign-out was cancelled to protect your entries.');return}
+    writeMeta({user:user.id,revision:baseRevision,stamp:baseStamp,dirty:wasDirty,localUpdatedAt:wasDirty?(meta.localUpdatedAt||logicalNow()):meta.localUpdatedAt});
+  }
+  clearTimeout(cloudTimer);cloudTimer=null;cloudReady=false;
+  if(btn)btn.disabled=true;
+  try{
+    // Do not wait for Realtime teardown: it must never block authentication logout.
+    const {error}=await supabase.auth.signOut({scope:'local'});
+    if(error)throw error;
+    if(cloudUser)handleSignedOut('Signed out. Your saved workspace remains on this device.');
+    else{
+      $('#accountStatus').textContent='On this device';
+      $('#accountEmail').textContent='Signed out. Your saved workspace remains on this device.';
+      $('#connectCloudBtn').hidden=false;$('#signOutBtn').hidden=true;
+      setSync(wasDirty?'Signed out. Unsynced changes remain saved on this device.':'Signed out. Your workspace remains saved on this device.');
+    }
+    $('#authGate').style.display='flex';
+    $('#authMessage').textContent='You have signed out of LifeOS. Your device data has been kept.';
+  }catch(error){
+    cloudReady=wasCloudReady&&!!cloudUser;
+    toast('Could not sign out: '+(error?.message||'Please retry.'));
+  }finally{
+    if(btn)btn.disabled=false;
+  }
+}
 function handleSignedOut(msg){
   const retainedUnsyncedChanges=dirty;
   cloudReady=false;activating=false;clearTimeout(cloudTimer);cloudTimer=null;pendingCloudConflict=null;baseRevision=0;clearConflictActions();
@@ -270,24 +322,7 @@ function handleSignedOut(msg){
 }
 async function startCloud(){
   const gate=$('#authGate'),msg=$('#authMessage');
-  // Keep sign-out available independently of cloud activation or sync health.
-  // Signing out must not require a successful save and must never clear local data.
-  $('#signOutBtn').onclick=async()=>{
-    if(!supabase){toast('Cloud client is unavailable. Your local workspace is unchanged.');return}
-    const btn=$('#signOutBtn');btn.disabled=true;
-    try{
-      const {error}=await supabase.auth.signOut();
-      if(error)throw error;
-      if(cloudUser)handleSignedOut('Signed out. Your saved workspace remains on this device.');
-      else{
-        $('#accountStatus').textContent='On this device';
-        $('#accountEmail').textContent='Signed out. Your saved workspace remains on this device.';
-        $('#connectCloudBtn').hidden=false;btn.hidden=true;
-        setSync(dirty?'Signed out. Unsynced changes remain saved on this device.':'Signed out. Your workspace remains saved on this device.');
-      }
-    }catch(error){toast('Could not sign out: '+(error?.message||'Please retry.'))}
-    finally{btn.disabled=false}
-  };
+  $('#signOutBtn').onclick=signOutFromLifeOS;
   // Bind the controls before checking the Supabase SDK. If the SDK fails to load,
   // the button must still respond with a visible error instead of doing nothing.
   const startGoogleSignIn=async()=>{
@@ -330,7 +365,14 @@ async function activateSession(session){
     // A local copy is only trusted if it belongs to this same account.
     const meta=readMeta(),cacheEligible=meta.user===nextUser.id||!meta.user;let cached=null;
     if(cacheEligible){try{const v=JSON.parse(localStorage.getItem('lifeos-review-v2')),p=JSON.parse(localStorage.getItem('lifeos-review-prefs'));if(v&&Array.isArray(v.tasks))cached={ws:normalizeWorkspace(v),pr:mergePrefs(defaultPrefs(),p)}}catch(e){}}
-    if(!cacheEligible){try{localStorage.removeItem(BASE_KEY);CACHE_KEYS.slice(0,2).forEach(k=>localStorage.removeItem(k))}catch(e){}meta.user=nextUser.id;meta.dirty=false;meta.revision=0;meta.stamp=null;meta.localUpdatedAt=0;baseStamp=null;baseRevision=0;s=seed();prefs=defaultPrefs();activationStartSnapshot=currentSnapshot()}
+    if(!cacheEligible){
+      // Archive the previous account's local workspace before changing account context.
+      // Never merge another account's private data into this account automatically.
+      const recoveryKey=preserveForeignLocalCache(meta);
+      console.warn('LifeOS preserved a previous account workspace for recovery:',recoveryKey);
+      meta.user=nextUser.id;meta.dirty=false;meta.revision=0;meta.stamp=null;meta.localUpdatedAt=0;
+      baseStamp=null;baseRevision=0;s=seed();prefs=defaultPrefs();activationStartSnapshot=currentSnapshot();
+    }
     let remote=null,offline=false,status='';
     try{remote=await fetchRemote()}catch(e){offline=true;console.warn('LifeOS: keeping this device available offline',e)}
     if(cloudUser?.id!==nextUser.id)return;
@@ -365,32 +407,7 @@ async function activateSession(session){
     $('#accountEmail').textContent=cloudUser.email||'Signed in with Google';
     $('#connectCloudBtn').hidden=true;$('#signOutBtn').hidden=false;
     setSync(status);
-    $('#signOutBtn').onclick=async()=>{
-      // Signing out must never depend on a successful cloud write. Keep the
-      // local workspace and its account metadata so unsynced entries survive.
-      clearTimeout(cloudTimer);cloudTimer=null;
-      const wasDirty=dirty;
-      cloudReady=false;
-      if(window.__lifeosChannel){await supabase.removeChannel(window.__lifeosChannel);window.__lifeosChannel=null}
-      const {error}=await supabase.auth.signOut();
-      if(error){
-        cloudReady=true;
-        toast('Could not sign out: '+error.message);
-        return;
-      }
-      if(wasDirty){
-        const meta=readMeta();
-        writeMeta({user:nextUser.id,revision:baseRevision,stamp:baseStamp,dirty:true,localUpdatedAt:meta.localUpdatedAt||logicalNow()});
-        writeCache();
-      }
-      cloudUser=null;window.__lifeosCloudLoaded=false;
-      $('#accountStatus').textContent='On this device';
-      $('#accountEmail').textContent='Signed out. Your saved workspace remains on this device.';
-      $('#connectCloudBtn').hidden=false;$('#signOutBtn').hidden=true;
-      setSync(wasDirty?'Signed out. Unsynced changes are saved on this device; reconnect this account to sync them.':'Signed out. Your workspace remains saved on this device.');
-      $('#authGate').style.display='flex';
-      $('#authMessage').textContent='You have signed out of LifeOS. Your device data has been kept.';
-    };
+    $('#signOutBtn').onclick=signOutFromLifeOS;
     setup();
     if(!offline&&dirty&&!pendingCloudConflict)await pushCloud();
     if(pendingCloudConflict)showCloudConflict(pendingCloudConflict);
