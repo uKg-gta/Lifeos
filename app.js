@@ -678,31 +678,15 @@ function restoreBackup(mode){if(!pendingBackup)return;let x=pendingBackup.data,w
   }catch(e){s=oldS;prefs=oldPrefs;writeCache();applyPrefs();render();toast(e.message||'Restore failed. Existing workspace was preserved.')}
 };if(mode==='merge'){inPageConfirm('Merge backup',`Merge ${pendingBackup.fileName}? Preview: ${keys.map(k=>`${k}: ${(w[k]||[]).length} imported`).join(', ')}. ${conflicts} matching IDs will be updated; records without IDs will be appended. A safety backup will be downloaded first. Continue?`,doRestore);}else{inPageConfirm('Replace workspace',`Replace the current workspace with ${pendingBackup.fileName}? This cannot be undone unless you have a backup.`,doRestore,true);}}
 
-function saveProfile(){prefs.name=$('#profileNameInput').value.trim().slice(0,60);prefs.motto=$('#profileMottoInput').value.trim().slice(0,120);save();applyPrefs();toast('Profile saved.')}
-
-function applyPrefs(){prefs.picture=safePic(prefs.picture);document.documentElement.dataset.theme=prefs.theme==='light'?'light':'dark';document.documentElement.dataset.accent=prefs.accent||'amber';document.documentElement.dataset.density=prefs.density||'comfortable';document.documentElement.dataset.font=prefs.font||'default';$('#themeBtn').textContent=prefs.theme==='light'?'☾':'☼';$('#prefTheme').value=prefs.theme;$('#prefAccent').value=prefs.accent||'amber';$('#prefDensity').value=prefs.density;$('#prefFont').value=prefs.font;prefs.weekStart=1;$('#prefClock').value=prefs.clock||'12';$('#prefDate').value=prefs.dateFormat||'dmy';$('#prefBudgetResetDay').value=String(prefs.budgetResetDay||1);$('#summaryTasks').checked=prefs.summaries?.tasks!==false;$('#summaryStudy').checked=prefs.summaries?.study!==false;$('#summaryHabits').checked=prefs.summaries?.habits!==false;let av=$('#profileAvatar');av.innerHTML=prefs.picture?`<img src="${prefs.picture}" alt="Profile picture">`:safe(prefs.avatar||'UG');$('#profileDisplayName').textContent=prefs.name||'Your workspace';$('#profileNameInput').value=prefs.name||'';$('#profileMottoInput').value=prefs.motto||'';$('#profilePageAvatar').innerHTML=prefs.picture?`<img src="${prefs.picture}" alt="Profile picture">`:safe(prefs.avatar||'UG');$('#profileMotto').textContent=prefs.motto||'Personal workspace';$$('[data-avatar]').forEach(b=>b.classList.toggle('selected',b.dataset.avatar===prefs.avatar&&!prefs.picture));applyModuleVisibility();applySummaries();updateLifeOSGreeting();updateDateLabels()}
-function applyModuleVisibility(){let always=['home','settings'];$$('[data-page]').forEach(b=>{let id=b.dataset.page;if(!id)return;let hidden=!always.includes(id)&&(prefs.hiddenModules||[]).includes(id);b.style.display=hidden?'none':''});$('#moduleToggles').innerHTML=[['tasks','Tasks'],['habits','Habits & routines'],['projects','Goals'],['study','Exams'],['focus','Focus timer'],['library','Library'],['notes','Notes'],['finance','Finance'],['calendar','Calendar']].map(([id,label])=>`<label><input type="checkbox" data-module-toggle="${id}" ${!(prefs.hiddenModules||[]).includes(id)?'checked':''}> ${label}</label>`).join('');$$('[data-module-toggle]').forEach(c=>c.onchange=()=>{let id=c.dataset.moduleToggle;prefs.hiddenModules=prefs.hiddenModules||[];prefs.hiddenModules=c.checked?prefs.hiddenModules.filter(x=>x!==id):[...new Set([...prefs.hiddenModules,id])];save();applyModuleVisibility();if(!c.checked&&$('#page-'+id)?.classList.contains('active'))nav('home');toast(c.checked?'Module shown in navigation.':'Module hidden; its data is unchanged.')})}
-function applySummaries(){[['tasks','dashTasks'],['study','studyToday'],['habits','dashHabits']].forEach(([k,id])=>{let el=$('#'+id);if(!el)return;let card=el.closest('.card');if(card)card.style.display=prefs.summaries?.[k]===false?'none':''})}
-function toggleTheme(){prefs.theme=prefs.theme==='light'?'dark':'light';save();applyPrefs()}
-function toggleSidebar(){let x=$('#sidebar');x.classList.toggle('collapsed');$('#collapse').textContent=x.classList.contains('collapsed')?'›':'‹';$('#settingsSidebar').textContent=x.classList.contains('collapsed')?'Expand sidebar':'Collapse'}
-
-function getLifeOSGreeting(){
-  const hour = new Date().getHours();
-  const period = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-  const name = (typeof prefs !== 'undefined' && prefs && prefs.name) ? String(prefs.name).trim() : '';
-  return period + (name ? ', ' + name : '') + '.';
-}
-
-
-function updateLifeOSGreeting(){
-  const candidates = document.querySelectorAll('#page-home h1, #page-home .heading h1, #page-home h1.greeting');
-  for (const el of candidates) {
-    if (/^Good (morning|afternoon|evening)/i.test((el.textContent || '').trim())) {
-      el.textContent = getLifeOSGreeting();
-      return;
-    }
-  }
-}
+const profileUI=window.LifeOSProfileUI.create({$, $$, getPrefs:()=>prefs, save, toast, safe, safePic, updateDateLabels, nav});
+function saveProfile(){profileUI.saveProfile()}
+function applyPrefs(){profileUI.applyPrefs()}
+function applyModuleVisibility(){profileUI.applyModuleVisibility()}
+function applySummaries(){profileUI.applySummaries()}
+function toggleTheme(){profileUI.toggleTheme()}
+function toggleSidebar(){profileUI.toggleSidebar()}
+function getLifeOSGreeting(){return profileUI.getLifeOSGreeting()}
+function updateLifeOSGreeting(){profileUI.updateLifeOSGreeting()}
 
 function setup(){
   if(setupComplete){applyPrefs();render();return}
