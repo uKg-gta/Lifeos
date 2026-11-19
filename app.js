@@ -4,7 +4,7 @@ const $=s=>document.querySelector(s), $=s=>[...document.querySelectorAll(s)];
 const formatUtils=window.LifeOSFormatUtils;
 const now=new Date(), dateLabel=(d=new Date())=>dateUtils.dateLabel(d,prefs.dateFormat), safe=s=>formatUtils.escapeHtml(s);
 const seed=()=>({tasks:[],habits:[],routines:[],notes:[],sessions:[],syllabus:[],transactions:[],budgets:[],resources:[],goals:[],projects:[],investments:[],assets:[],liabilities:[],exams:[],subjects:[],studyToday:0,studyWeek:0,timer:{mode:'countdown',duration:1500,remaining:1500,running:false,startedAt:null,paused:false}});
-let s=seed(), prefs={theme:'dark',accent:'amber',density:'comfortable',font:'default',name:'',motto:'',avatar:'UG',picture:'',hiddenModules:[],summaries:{tasks:true,study:true,habits:true},weekStart:1,clock:'12',dateFormat:'dmy',budgetResetDay:1}, pendingBackup=null, taskView='all',bookView='cards',weekOffset=0,financeMonth=null,toastTimer=null,modalSaveFn=null,modalReturnFocus=null,searchReturnFocus=null;
+let s=seed(), prefs={theme:'dark',accent:'amber',density:'comfortable',font:'default',name:'',motto:'',avatar:'UG',picture:'',hiddenModules:[],summaries:{tasks:true,study:true,habits:true},weekStart:1,clock:'12',dateFormat:'dmy',budgetResetDay:1}, pendingBackup=null, taskView='all',bookView='cards',weekOffset=0,financeMonth=null,toastTimer=null,modalSaveFn=null;
 const weight=p=>formatUtils.priorityWeight(p), todayTasks=()=>s.tasks.filter(t=>t.date==='today'), score=()=>{let a=todayTasks(),total=a.reduce((n,t)=>n+weight(t.priority),0);return total?Math.round(a.filter(t=>t.status==='done').reduce((n,t)=>n+weight(t.priority),0)/total*100):null}, mins=m=>formatUtils.formatMinutes(m), money=n=>formatUtils.formatRupees(n), fmtsec=n=>formatUtils.formatClockSeconds(n);
 let supabase=null, cloudUser=null, cloudReady=false, cloudTimer=null, applyingRemote=false, lastCloudPayload='', baseStamp=null, baseRevision=0, pushingStamp=null, pushing=false, pushQueued=false, pushPromise=null, pendingCloudConflict=null, activating=false, retryTimer=null, retryCount=0, dirty=false, lastDay=dayKey();
 /* ===== Data hygiene, sync and auth (rewritten) ===== */
@@ -410,55 +410,15 @@ function updateDateLabels(){
   if(t)t.textContent='A little progress, every day.';
   if(c)c.textContent='Today · '+fullDateLabel(d)+' · '+fmtTime(d);
 }
-function showModal(){
-  const overlay=$('#modalBack');
-  if(!overlay.classList.contains('open'))modalReturnFocus=document.activeElement;
-  overlay.classList.add('open');
-  const first=$('#modalBody input,#modalBody select,#modalBody textarea')||$('#modalCancel');
-  setTimeout(()=>first?.focus(),0);
-}
-function closeModal(){
-  const overlay=$('#modalBack'),wasOpen=overlay.classList.contains('open');
-  overlay.classList.remove('open');
-  const target=modalReturnFocus;modalReturnFocus=null;
-  if(wasOpen&&target?.isConnected)target.focus();
-}
-function closeSearchModal(){
-  const dialog=$('#searchModal');if(!dialog)return;
-  dialog.remove();
-  const target=searchReturnFocus;searchReturnFocus=null;
-  if(target?.isConnected)target.focus();
-}
-function trapDialogTab(event,dialog){
-  const selector='a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
-  const items=[...dialog.querySelectorAll(selector)].filter(x=>!x.hidden&&x.getAttribute('aria-hidden')!=='true'&&x.getClientRects().length);
-  if(!items.length){event.preventDefault();return}
-  const first=items[0],last=items[items.length-1];
-  if(event.shiftKey&&(document.activeElement===first||!dialog.contains(document.activeElement))){event.preventDefault();last.focus()}
-  else if(!event.shiftKey&&(document.activeElement===last||!dialog.contains(document.activeElement))){event.preventDefault();first.focus()}
-}
+const modalUI=window.LifeOSModalUI.create({$, safe});
+function showModal(){return modalUI.showModal()}
+function closeModal(){return modalUI.closeModal()}
+function closeSearchModal(){return modalUI.closeSearchModal()}
+function trapDialogTab(event,dialog){return modalUI.trapDialogTab(event,dialog)}
+function inPageConfirm(title,msg,onOk,isDanger=false){return modalUI.inPageConfirm(title,msg,onOk,isDanger)}
+function inPagePrompt(title,msg,defVal,onOk,inpType='text'){return modalUI.inPagePrompt(title,msg,defVal,onOk,inpType)}
+function bindModalClose(){return modalUI.bindModalClose()}
 
-function inPageConfirm(title,msg,onOk,isDanger=false){
-  $('#modalTitle').textContent=title||'Confirm';
-  $('#modalBody').innerHTML=`<p class="modal-confirm-copy">${safe(msg)}</p>`;
-  $('#modalSave').textContent=isDanger?'Delete':'Confirm';
-  $('#modalSave').className=isDanger?'btn danger-btn':'primary';
-  showModal();
-  bindModalClose();
-  $('#modalSave').onclick=()=>{closeModal();$('#modalSave').className='primary';onOk();};
-}
-function inPagePrompt(title,msg,defVal,onOk,inpType='text'){
-  $('#modalTitle').textContent=title||'Input';
-  $('#modalBody').innerHTML=`<div class="form"><label class="prompt-label">${safe(msg)}</label><input id="fPromptVal" type="${inpType}" class="input u-full-width" value="${safe(defVal||'')}"></div>`;
-  $('#modalSave').textContent='Save';
-  $('#modalSave').className='primary';
-  showModal();
-  bindModalClose();
-  setTimeout(()=>$('#fPromptVal')?.focus(),50);
-  $('#modalSave').onclick=()=>{let v=$('#fPromptVal').value;closeModal();onOk(v);};
-}
-
-function bindModalClose(){$('#modalClose').onclick=$('#modalCancel').onclick=closeModal;$('#modalBack').onclick=e=>{if(e.target===$('#modalBack'))closeModal()}}
 function dayCheck(){if(dayKey()!==lastDay){lastDay=dayKey();if(rollover())save();render()}}
 function bindGlobalsOnce(){
   if(window.__lifeosGlobals)return;window.__lifeosGlobals=true;
