@@ -100,3 +100,19 @@ test('progress bar and active mobile navigation styles rely on source order and 
   assert.match(navLight,/color:\s*var\(--accent\);/);
   assert.doesNotMatch(barBase+barAccent+navBase+navLight,/!important/i);
 });
+
+test('application styles are consolidated into one ordered style block',()=>{
+  const blocks=[...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/gi)];
+  assert.equal(blocks.length,1,'all application CSS should live in one style block');
+  const css=blocks[0][1];
+  const base=css.indexOf(':root {');
+  const weekday=css.indexOf('.daychoices{');
+  const auth=css.indexOf('#authGate.lifeos-auth-gate {');
+  assert.ok(base>=0&&weekday>base&&auth>weekday,'original CSS block order must be preserved');
+  assert.match(css,/@media\s*\(max-width:\s*760px\)/);
+  assert.match(css,/@media\s*\(prefers-reduced-motion:\s*reduce\)/);
+  assert.match(html,/<meta http-equiv="Content-Security-Policy"/);
+  assert.match(html,/<script src="\.\/vendor\/supabase\.js"/);
+  assert.match(html,/<script src="\.\/sync-core\.js"/);
+  assert.match(html,/id="authGate"/);
+});
