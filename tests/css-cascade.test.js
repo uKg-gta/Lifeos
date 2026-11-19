@@ -64,3 +64,27 @@ test('productivity score card theme overrides use the normal cascade',()=>{
   assert.match(lightGlow,/opacity:\s*0\.7;/);
   assert.doesNotMatch(dark+darkGlow+light+lightGlow,/!important/i);
 });
+
+test('focus timer ring dark and light rules use selector order and specificity',()=>{
+  const get=(selector,from=0)=>{const i=html.indexOf(selector,from);assert.ok(i>=0,selector+' should exist');return html.slice(i,html.indexOf('}',i)+1);};
+  const ringBase=get('.ring {');
+  const ringDark=get('.ring {',html.indexOf('.ring {')+1);
+  const ringLight=get('[data-theme="light"] .ring {');
+  const timerDark=get('.timer-ring {',html.indexOf('.timer-ring {')+1);
+  const timerLight=get('[data-theme="light"] .timer-ring {');
+  assert.match(ringDark,/conic-gradient\(#10b981/);
+  assert.match(ringLight,/var\(--panel3\)/);
+  assert.match(timerDark,/border-right-color:\s*#ec4899;/);
+  assert.match(timerLight,/border-right-color:\s*var\(--coral\);/);
+  assert.doesNotMatch(ringBase+ringDark+ringLight+timerDark+timerLight,/!important/i);
+});
+test('metric number dark gradient and light text reset rely on cascade',()=>{
+  const get=(selector,from=0)=>{const i=html.indexOf(selector,from);assert.ok(i>=0,selector+' should exist');return html.slice(i,html.indexOf('}',i)+1);};
+  const dark=get('.metric strong {',html.indexOf('.metric strong {')+1);
+  const light=get('[data-theme="light"] .metric strong {');
+  assert.match(dark,/background:\s*linear-gradient/);
+  assert.match(dark,/-webkit-text-fill-color:\s*transparent;/);
+  assert.match(light,/background:\s*none;/);
+  assert.match(light,/-webkit-text-fill-color:\s*var\(--text\);/);
+  assert.doesNotMatch(dark+light,/!important/i);
+});
