@@ -6,10 +6,11 @@ const path=require('node:path');
 
 const worker=fs.readFileSync(path.join(__dirname,'../sw.js'),'utf8');
 
-test('offline app shell precaches the application JavaScript',()=>{
-  assert.match(worker,/const CACHE_NAME = 'lifeos-shell-v4'/);
-  assert.match(worker,/['"]\.\/app\.js['"]/);
-  assert.match(worker,/['"]\.\/sync-core\.js['"]/);
+test('offline app shell precaches the complete application JavaScript',()=>{
+  assert.match(worker,/const CACHE_NAME = 'lifeos-shell-v5'/);
+  for(const file of ['app.js','sync-core.js','study-utils.js','date-utils.js','format-utils.js','profile-ui.js','focus-timer.js','modal-ui.js','search-ui.js','study-page.js','task-page.js','habit-page.js','notes-page.js','calendar-page.js','library-page.js','projects-page.js','finance-page.js','entry-modal.js','backup-ui.js']) {
+    assert.match(worker,new RegExp(`['"]\\./${file}['"]`),file+' must be available offline');
+  }
 });
 
 test('service worker removes prior LifeOS shell caches on activation',()=>{

@@ -1,11 +1,28 @@
 'use strict';
 
-const CACHE_NAME = 'lifeos-shell-v4';
+const CACHE_NAME = 'lifeos-shell-v5';
 const APP_SHELL = [
   './',
   './index.html',
   './manifest.json',
   './sync-core.js',
+  './study-utils.js',
+  './date-utils.js',
+  './format-utils.js',
+  './profile-ui.js',
+  './focus-timer.js',
+  './modal-ui.js',
+  './search-ui.js',
+  './study-page.js',
+  './task-page.js',
+  './habit-page.js',
+  './notes-page.js',
+  './calendar-page.js',
+  './library-page.js',
+  './projects-page.js',
+  './finance-page.js',
+  './entry-modal.js',
+  './backup-ui.js',
   './app.js',
   './vendor/supabase.js',
   './icons/icon-192.png',
