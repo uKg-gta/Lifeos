@@ -348,20 +348,30 @@ async function activateSession(session){
     $('#connectCloudBtn').hidden=true;$('#signOutBtn').hidden=false;
     setSync(status);
     $('#signOutBtn').onclick=async()=>{
+      // Signing out must never depend on a successful cloud write. Keep the
+      // local workspace and its account metadata so unsynced entries survive.
       clearTimeout(cloudTimer);cloudTimer=null;
-      const ok=await pushCloud();
-      const doSignOut=async()=>{
-        cloudReady=false;
-        if(window.__lifeosChannel){await supabase.removeChannel(window.__lifeosChannel);window.__lifeosChannel=null}
-        const {error}=await supabase.auth.signOut();
-        if(error){cloudReady=true;toast('Could not sign out: '+error.message);return}
-        clearLocalCache();s=seed();prefs=defaultPrefs();baseStamp=null;baseRevision=0;lastCloudPayload='';dirty=false;pendingCloudConflict=null;
-        cloudUser=null;window.__lifeosCloudLoaded=false;
-        try{applyPrefs();render()}catch(e){}
-        $('#authGate').style.display='flex';$('#authMessage').textContent='You have signed out of LifeOS.';
-      };
-      if(!ok){toast('Sign-out paused: cloud save was not confirmed. Your local data is still here; resolve the sync conflict or retry before signing out.');return;}
-      await doSignOut();
+      const wasDirty=dirty;
+      cloudReady=false;
+      if(window.__lifeosChannel){await supabase.removeChannel(window.__lifeosChannel);window.__lifeosChannel=null}
+      const {error}=await supabase.auth.signOut();
+      if(error){
+        cloudReady=true;
+        toast('Could not sign out: '+error.message);
+        return;
+      }
+      if(wasDirty){
+        const meta=readMeta();
+        writeMeta({user:nextUser.id,revision:baseRevision,stamp:baseStamp,dirty:true,localUpdatedAt:meta.localUpdatedAt||logicalNow()});
+        writeCache();
+      }
+      cloudUser=null;window.__lifeosCloudLoaded=false;
+      $('#accountStatus').textContent='On this device';
+      $('#accountEmail').textContent='Signed out. Your saved workspace remains on this device.';
+      $('#connectCloudBtn').hidden=false;$('#signOutBtn').hidden=true;
+      setSync(wasDirty?'Signed out. Unsynced changes are saved on this device; reconnect this account to sync them.':'Signed out. Your workspace remains saved on this device.');
+      $('#authGate').style.display='flex';
+      $('#authMessage').textContent='You have signed out of LifeOS. Your device data has been kept.';
     };
     setup();
     if(!offline&&dirty&&!pendingCloudConflict)await pushCloud();
