@@ -326,7 +326,7 @@ async function activateSession(session){
       // A device cache without a recorded cloud baseline is not safe to discard.
       // Treat it as local-only data and merge it with the remote workspace, even
       // when its dirty flag was never set by an earlier offline session.
-      if((cached&&(!latestMeta.dirty||latestMeta.dirty))||localChanged){
+      if(cached||localChanged){
         const localSnapshot=liveSnapshot,storedBase=meta.user===nextUser.id?readBaseSnapshot():null;
         if(!storedBase){const stamp=latestMeta.localUpdatedAt||logicalNow();window.LifeOSSyncCore.stampWorkspaceChanges(null,localSnapshot.workspace,stamp)}
         const baseSnapshot=storedBase?{workspace:normalizeWorkspace(storedBase.workspace),preferences:mergePrefs(defaultPrefs(),storedBase.preferences)}:{workspace:normalizeWorkspace({}),preferences:defaultPrefs()};
