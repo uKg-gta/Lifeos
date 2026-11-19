@@ -45,16 +45,22 @@ test('habit icon theme styles rely on selector specificity, not important flags'
 });
 
 test('productivity score card theme overrides use the normal cascade',()=>{
-  const dark=html.match(/\/\* Vibrant gradients on card accents \*\/\s*\.score\s*\{([^}]*)\}/);
-  const darkGlow=html.match(/\.score::after\s*\{([^}]*)\}\s*\[data-theme="light"\] \.score/);
-  const light=html.match(/\[data-theme="light"\] \.score\s*\{([^}]*)\}/);
-  const lightGlow=html.match(/\[data-theme="light"\] \.score::after\s*\{([^}]*)\}/);
-  assert.ok(dark && darkGlow && light && lightGlow,'dark and light score card rules should exist');
-  assert.match(dark[1],/background:\s*linear-gradient/);
-  assert.match(dark[1],/border:\s*1px solid/);
-  assert.match(light[1],/background:\s*linear-gradient/);
-  assert.match(light[1],/border-color:\s*var\(--line\)/);
-  assert.match(darkGlow[1],/opacity:\s*0\.7;/);
-  assert.match(lightGlow[1],/opacity:\s*0\.7;/);
-  assert.doesNotMatch(dark[1]+darkGlow[1]+light[1]+lightGlow[1],/!important/i);
+  const blocks=[...html.matchAll(/\.score(?:::after)?\s*\{([^}]*)\}|\[data-theme="light"\]\s+\.score(?:::after)?\s*\{([^}]*)\}/g)];
+  const find=(selector)=> {
+    const start=html.indexOf(selector);
+    assert.ok(start>=0,selector+' rule should exist');
+    const end=html.indexOf('}',start);
+    return html.slice(start,end+1);
+  };
+  const dark=find('/* Vibrant gradients on card accents */');
+  const darkGlow=find('.score::after {',html.indexOf('/* Vibrant gradients on card accents */'));
+  const light=find('[data-theme="light"] .score {');
+  const lightGlow=find('[data-theme="light"] .score::after {');
+  assert.match(dark,/background:\s*linear-gradient/);
+  assert.match(dark,/border:\s*1px solid/);
+  assert.match(light,/background:\s*linear-gradient/);
+  assert.match(light,/border-color:\s*var\(--line\)/);
+  assert.match(darkGlow,/opacity:\s*0\.7;/);
+  assert.match(lightGlow,/opacity:\s*0\.7;/);
+  assert.doesNotMatch(dark+darkGlow+light+lightGlow,/!important/i);
 });
