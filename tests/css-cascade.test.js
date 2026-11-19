@@ -29,3 +29,17 @@ test('quick add button uses its stronger ID selector instead of important overri
   assert.match(hover[1],/box-shadow:\s*0 6px 22px var\(--accent-glow\);/);
   assert.doesNotMatch(button[1]+hover[1],/!important/i);
 });
+
+test('habit icon theme styles rely on selector specificity, not important flags',()=>{
+  const base=html.indexOf('.habiticon {');
+  const vibrant=html.indexOf('.habiticon {',base+1);
+  const light=html.indexOf('[data-theme="light"] .habiticon {');
+  assert.ok(base>=0 && vibrant>base && light>vibrant,'base, vibrant, and light-theme rules should remain in cascade order');
+  const vibrantRule=html.slice(vibrant,html.indexOf('}',vibrant)+1);
+  const lightRule=html.slice(light,html.indexOf('}',light)+1);
+  assert.match(vibrantRule,/background:\s*linear-gradient/);
+  assert.match(vibrantRule,/color:\s*#34d399;/);
+  assert.match(lightRule,/color:\s*#047857;/);
+  assert.match(lightRule,/background:\s*rgba\(4, 120, 87, 0\.08\);/);
+  assert.doesNotMatch(vibrantRule+lightRule,/!important/i);
+});
