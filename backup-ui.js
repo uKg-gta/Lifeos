@@ -1,4 +1,9 @@
-(()=>{'use strict';
+'use strict';
+(function(root,factory){
+  const api=factory();
+  if(typeof module==='object'&&module.exports)module.exports=api;
+  else root.LifeOSBackupUI=api;
+})(typeof globalThis!=='undefined'?globalThis:this,function(){
 function create({getState,getPrefs,setPrefs,normalizeWorkspace,mergeWorkspace,mergePrefs,safe,toast,confirm:inPageConfirm,save,applyPrefs,render,nav,pushCloud,restorePrevious,storage=localStorage}){
  let pendingBackup=null;
  const $=s=>document.querySelector(s);
@@ -27,5 +32,5 @@ function create({getState,getPrefs,setPrefs,normalizeWorkspace,mergeWorkspace,me
  };if(mode==='merge'){inPageConfirm('Merge backup',`Merge ${pendingBackup.fileName}? Preview: ${keys.map(k=>`${k}: ${(w[k]||[]).length} imported`).join(', ')}. ${conflicts} matching IDs will be updated; records without IDs will be appended. A safety backup will be downloaded first. Continue?`,doRestore);}else{inPageConfirm('Replace workspace',`Replace the current workspace with ${pendingBackup.fileName}? This cannot be undone unless you have a backup.`,doRestore,true);}}
  return {exportData,backupPreview,restoreBackup,validBackup,backupArrays};
 }
-window.LifeOSBackupUI={create};
-})();
+return Object.freeze({create});
+});
