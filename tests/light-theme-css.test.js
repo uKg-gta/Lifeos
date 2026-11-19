@@ -81,8 +81,8 @@ test('navigation icon hover and active styles are consolidated without changing 
 
 
 test('task and row layout utilities remain defined only in their shared base rules', () => {
-  assert.equal((css.match(/\\.taskmain\\s*,\\s*\\.rowmain/g) || []).length, 1);
-  assert.equal((css.match(/\\.taskname\\s*,\\s*\\.rowtitle/g) || []).length, 1);
+  assert.equal((css.match(/\.taskmain\s*,\s*\.rowmain/g) || []).length, 1);
+  assert.equal((css.match(/\.taskname\s*,\s*\.rowtitle/g) || []).length, 1);
   const layout = rulesFor('.taskmain, .rowmain')[0] || '';
   const titles = rulesFor('.taskname, .rowtitle')[0] || '';
   assert.match(layout, /min-width:\\s*0/);
