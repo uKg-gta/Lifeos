@@ -391,9 +391,11 @@ function rollover(){
 function adoptOrphans(name){s.syllabus.forEach(t=>{if(t.exam===undefined)t.exam=name});s.sessions.forEach(x=>{if(x.exam===undefined)x.exam=name})}
 function weekStartKey(d=new Date()){const x=new Date(d);x.setDate(x.getDate()-((x.getDay()+6)%7));return dayKey(x)}
 function studyTargetMins(){const m=Math.round(Number(prefs&&prefs.studyTargetMins));return Number.isFinite(m)&&m>=5&&m<=1440?m:180}
-function dur(m){m=Math.max(0,Math.round(m||0));const h=Math.floor(m/60),r=m%60;return h?(r?`${h}h ${r}m`:`${h}h`):`${r}m`}
-function hm(m){m=Math.max(0,Math.round(m||0));return Math.floor(m/60)+'h '+String(m%60).padStart(2,'0')+'m'}
-function studyProgressText(done,target){const pct=Math.round(done/target*100);return `${dur(done)} studied · ${dur(target)} target · ${pct}%`+(done>target?` · ${dur(done-target)} over`:'')}
+const studyUtils=window.LifeOSStudyUtils;
+function dur(m){return studyUtils.formatDuration(m)}
+function hm(m){return studyUtils.formatHoursMinutes(m)}
+function studyProgressText(done,target){return studyUtils.progressText(done,target)}
+
 function studyTodayMins(){const k=dayKey();return s.sessions.filter(x=>x.date===k).reduce((a,x)=>a+(+x.minutes||0),0)}
 function studyWeekMins(){const k=weekStartKey(),t=dayKey();return s.sessions.filter(x=>x.date>=k&&x.date<=t).reduce((a,x)=>a+(+x.minutes||0),0)}
 function sessionDateLabel(d){if(!dayRe.test(d||''))return 'Earlier';return d===dayKey()?'Today':dateLabel(new Date(d+'T12:00:00'))}
