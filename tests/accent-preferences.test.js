@@ -5,11 +5,12 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const html = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
+const app = fs.readFileSync(path.join(__dirname, '../app.js'), 'utf8');
 
 test('accent preferences are normalized to the four colours offered in Settings', () => {
-  assert.match(html, /accent:pick\(p\.accent,\['amber','green','coral','slate'\],p\.accent==='blue'\?'amber':p\.accent==='violet'\?'green':d\.accent\)/);
-  assert.match(html, /dataset\.accent=prefs\.accent\|\|'amber'/);
-  assert.match(html, /\$\('#prefAccent'\)\.value=prefs\.accent\|\|'amber'/);
+  assert.match(app, /accent:pick\(p\.accent,\['amber','green','coral','slate'\],p\.accent==='blue'\?'amber':p\.accent==='violet'\?'green':d\.accent\)/);
+  assert.match(app, /dataset\.accent=prefs\.accent\|\|'amber'/);
+  assert.match(app, /\$\('#prefAccent'\)\.value=prefs\.accent\|\|'amber'/);
 });
 
 test('legacy accent names are migrated instead of being separate CSS themes', () => {
