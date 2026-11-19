@@ -1,5 +1,5 @@
 (()=>{'use strict';
-function create({getState,getPrefs,setPrefs,normalizeWorkspace,mergeWorkspace,mergePrefs,safe,toast,confirm:inPageConfirm,save,applyPrefs,render,nav,pushCloud,storage=localStorage}){
+function create({getState,getPrefs,setPrefs,normalizeWorkspace,mergeWorkspace,mergePrefs,safe,toast,confirm:inPageConfirm,save,applyPrefs,render,nav,pushCloud,restorePrevious,storage=localStorage}){
  let pendingBackup=null;
  const $=s=>document.querySelector(s);
  function exportData(){let payload={app:'LifeOS',backupVersion:1,exportedAt:new Date().toISOString(),workspace:getState(),preferences:getPrefs()};let blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download='lifeos-workspace-backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);toast('Workspace backup exported.')}
@@ -19,11 +19,11 @@ function create({getState,getPrefs,setPrefs,normalizeWorkspace,mergeWorkspace,me
     save();applyPrefs();render();nav('home');
     const ok=await pushCloud();
     if(!ok){
-      Object.assign(getState(),oldS);setPrefs(oldPrefs);save();render();toast('Restore was not saved to the cloud. Your previous local workspace has been restored.');
+      restorePrevious(oldS,oldPrefs,true);applyPrefs();render();toast('Restore was not saved to the cloud. Your previous local workspace has been restored.');
       return;
     }
     toast(mode==='replace'?'Workspace restored and saved to the cloud.':'Backup merged and saved to the cloud.');
-  }catch(e){Object.assign(getState(),oldS);setPrefs(oldPrefs);storage.setItem('lifeos-review-v2',JSON.stringify(getState()));storage.setItem('lifeos-review-prefs',JSON.stringify(getPrefs()));applyPrefs();render();toast(e.message||'Restore failed. Existing workspace was preserved.')}
+  }catch(e){restorePrevious(oldS,oldPrefs,false);applyPrefs();render();toast(e.message||'Restore failed. Existing workspace was preserved.')}
  };if(mode==='merge'){inPageConfirm('Merge backup',`Merge ${pendingBackup.fileName}? Preview: ${keys.map(k=>`${k}: ${(w[k]||[]).length} imported`).join(', ')}. ${conflicts} matching IDs will be updated; records without IDs will be appended. A safety backup will be downloaded first. Continue?`,doRestore);}else{inPageConfirm('Replace workspace',`Replace the current workspace with ${pendingBackup.fileName}? This cannot be undone unless you have a backup.`,doRestore,true);}}
  return {exportData,backupPreview,restoreBackup,validBackup,backupArrays};
 }
