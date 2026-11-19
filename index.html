@@ -213,7 +213,8 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 }
 .nav.active .ico {
   color: var(--accent);
-  filter: drop-shadow(0 0 6px var(--accent-glow));
+  filter: drop-shadow(0 0 10px currentColor);
+  transform: scale(1.08);
 }
 .ico {
   width: 20px;
@@ -227,7 +228,8 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 }
 .nav:hover .ico {
   color: var(--text);
-  transform: scale(1.08);
+  transform: scale(1.14);
+  filter: drop-shadow(0 0 10px currentColor);
 }
 
 .sidebottom { margin-top: auto; flex-shrink: 0; padding-top: 12px; }
@@ -1114,14 +1116,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .nav[data-page="settings"] .ico { color: #94a3b8; background: rgba(148, 163, 184, 0.14); box-shadow: 0 2px 8px rgba(148, 163, 184, 0.12); }
 .nav[data-page="profile"] .ico { color: #f59e0b; background: rgba(245, 158, 11, 0.14); box-shadow: 0 2px 8px rgba(245, 158, 11, 0.12); }
 
-.nav:hover .ico {
-  transform: scale(1.14);
-  filter: drop-shadow(0 0 10px currentColor);
-}
-.nav.active .ico {
-  filter: drop-shadow(0 0 10px currentColor);
-  transform: scale(1.08);
-}
+
 
 /* Vibrant gradients on card accents */
 .score {
