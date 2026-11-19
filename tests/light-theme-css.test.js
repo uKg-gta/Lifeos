@@ -67,3 +67,14 @@ test('small branding, navigation, and account labels remain readable', () => {
     assert.match(rule, expected, selector + ' should use an 11px minimum');
   }
 });
+
+test('navigation icon hover and active styles are consolidated without changing their final effects', () => {
+  const hover = rulesFor('.nav:hover .ico');
+  const active = rulesFor('.nav.active .ico');
+  assert.equal(hover.length, 1, 'hover icon rule should be defined once');
+  assert.equal(active.length, 1, 'active icon rule should be defined once');
+  assert.match(hover[0], /transform:\\s*scale\\(1\\.14\\)/);
+  assert.match(hover[0], /filter:\\s*drop-shadow\\(0 0 10px currentColor\\)/);
+  assert.match(active[0], /transform:\\s*scale\\(1\\.08\\)/);
+  assert.match(active[0], /filter:\\s*drop-shadow\\(0 0 10px currentColor\\)/);
+});
