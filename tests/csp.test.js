@@ -7,12 +7,19 @@ const crypto = require('node:crypto');
 
 test('Content Security Policy hash matches the exact inline application script', () => {
   const html = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
-  const inlineScripts = [...html.matchAll(/<script>([\s\\S]*?)<\/script>/g)];
-  assert.equal(inlineScripts.length, 1, 'expected one hash-protected inline application script');
+  const startTag = '<script>';
+  const endTag = '</script>';
+  const scriptStart = html.indexOf(startTag);
+  assert.notEqual(scriptStart, -1, 'expected the inline application script');
+  const contentStart = scriptStart + startTag.length;
+  const scriptEnd = html.indexOf(endTag, contentStart);
+  assert.notEqual(scriptEnd, -1, 'expected the inline application script to close');
+  assert.equal(html.indexOf(startTag, contentStart), -1, 'expected exactly one inline application script');
 
+  const inlineScript = html.slice(contentStart, scriptEnd);
   const policy = html.match(/script-src[^;]*'sha256-([^']+)'/);
   assert.ok(policy, 'expected a SHA-256 script hash in the Content Security Policy');
 
-  const actual = crypto.createHash('sha256').update(inlineScripts[0][1], 'utf8').digest('base64');
+  const actual = crypto.createHash('sha256').update(inlineScript, 'utf8').digest('base64');
   assert.equal(policy[1], actual, 'CSP hash must be regenerated whenever inline application code changes');
 });
