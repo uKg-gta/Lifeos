@@ -327,7 +327,7 @@ async function activateSession(session){
       // Treat it as local-only data and merge it with the remote workspace, even
       // when its dirty flag was never set by an earlier offline session.
       if(cached||localChanged){
-        const localSnapshot=liveSnapshot,storedBase=meta.user===nextUser.id?readBaseSnapshot():null;
+        const localSnapshot=cached?{workspace:cached.ws,preferences:cached.pr}:liveSnapshot,storedBase=meta.user===nextUser.id?readBaseSnapshot():null;
         if(!storedBase){const stamp=latestMeta.localUpdatedAt||logicalNow();window.LifeOSSyncCore.stampWorkspaceChanges(null,localSnapshot.workspace,stamp)}
         const baseSnapshot=storedBase?{workspace:normalizeWorkspace(storedBase.workspace),preferences:mergePrefs(defaultPrefs(),storedBase.preferences)}:{workspace:normalizeWorkspace({}),preferences:defaultPrefs()};
         const merged=window.LifeOSSyncCore.mergeSnapshots(baseSnapshot,localSnapshot,remoteSnapshot,{localFallbackTime:latestMeta.localUpdatedAt||logicalNow(),remoteFallbackTime:stampMs(remote.updated_at)});
