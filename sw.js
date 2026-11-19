@@ -1,11 +1,12 @@
 'use strict';
 
-const CACHE_NAME = 'lifeos-shell-v3';
+const CACHE_NAME = 'lifeos-shell-v4';
 const APP_SHELL = [
   './',
   './index.html',
   './manifest.json',
   './sync-core.js',
+  './app.js',
   './vendor/supabase.js',
   './icons/icon-192.png',
   './icons/icon-512.png'
