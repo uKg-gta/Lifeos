@@ -2,6 +2,7 @@
 (()=>{'use strict';
 const $=s=>document.querySelector(s), $=s=>[...document.querySelectorAll(s)];
 const formatUtils=window.LifeOSFormatUtils;
+const dateUtils=window.LifeOSDateUtils;
 const now=new Date(), dateLabel=(d=new Date())=>dateUtils.dateLabel(d,prefs.dateFormat), safe=s=>formatUtils.escapeHtml(s);
 const seed=()=>({tasks:[],habits:[],routines:[],notes:[],sessions:[],syllabus:[],transactions:[],budgets:[],resources:[],goals:[],projects:[],investments:[],assets:[],liabilities:[],exams:[],subjects:[],studyToday:0,studyWeek:0,timer:{mode:'countdown',duration:1500,remaining:1500,running:false,startedAt:null,paused:false}});
 let s=seed(), prefs={theme:'dark',accent:'amber',density:'comfortable',font:'default',name:'',motto:'',avatar:'UG',picture:'',hiddenModules:[],summaries:{tasks:true,study:true,habits:true},weekStart:1,clock:'12',dateFormat:'dmy',budgetResetDay:1}, pendingBackup=null, taskView='all',bookView='cards',weekOffset=0,financeMonth=null,toastTimer=null;
@@ -393,7 +394,6 @@ function adoptOrphans(name){s.syllabus.forEach(t=>{if(t.exam===undefined)t.exam=
 function weekStartKey(d=new Date()){return dateUtils.weekStartKey(d)}
 function studyTargetMins(){const m=Math.round(Number(prefs&&prefs.studyTargetMins));return Number.isFinite(m)&&m>=5&&m<=1440?m:180}
 const studyUtils=window.LifeOSStudyUtils;
-const dateUtils=window.LifeOSDateUtils;
 function dur(m){return studyUtils.formatDuration(m)}
 function hm(m){return studyUtils.formatHoursMinutes(m)}
 function studyProgressText(done,target){return studyUtils.progressText(done,target)}
