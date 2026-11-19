@@ -9,5 +9,5 @@ test('creates study page controller with subject and page operations',()=>{
 });
 test('subject options include a selected value not yet in the saved subject list',()=>{
   const controller=studyPageModule.create({$:()=>({}),queryAll:()=>[],getState:()=>({subjects:['History'],syllabus:[],sessions:[],exams:[]}),getPrefs:()=>({}),safe:String,examDaysLeft:()=>'',formatMinutes:()=>'',studyWeekMins:()=>0,studyTodayMins:()=>0,studyTargetMins:()=>180,studyProgressText:()=>'',formatHoursMinutes:()=>'',save(){},render(){},toast(){},sessionDateLabel:()=>''});
-  assert.equal(controller.subjectOptions('Polity'),'<option selected>History</option><option selected>Polity</option>');
+  assert.equal(controller.subjectOptions('Polity'),'<option >History</option><option selected>Polity</option>');
 });
