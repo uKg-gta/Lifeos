@@ -13,9 +13,13 @@ function rulesFor(selector) {
   while (true) {
     const start = css.indexOf(selector, from);
     if (start < 0) break;
-    const open = css.indexOf('{', start + selector.length);
-    const close = open < 0 ? -1 : css.indexOf('}', open + 1);
-    if (open >= 0 && close >= 0) rules.push(css.slice(open + 1, close));
+    const after = css.slice(start + selector.length);
+    const opening = after.match(/^\s*\{/);
+    if (opening) {
+      const open = start + selector.length + opening[0].length - 1;
+      const close = css.indexOf('}', open + 1);
+      if (close >= 0) rules.push(css.slice(open + 1, close));
+    }
     from = start + selector.length;
   }
   return rules;
