@@ -4,7 +4,7 @@ const assert=require('node:assert/strict');
 const taskPageModule=require('../task-page');
 
 test('renders task titles safely and exposes edit and delete controls',()=>{
-  const controller=taskPageModule.create({$:()=>({}),getState:()=>({tasks:[]}),getTaskView:()=>'all',safe:value=>String(value).replace(/</g,'&lt;'),wire(){}});
+  const controller=taskPageModule.create({$:()=>({}),getState:()=>({tasks:[]}),getTaskView:()=>'all',safe:value=>String(value).replace(/</g,'&lt;').replace(/>/g,'&gt;'),wire(){}});
   const html=controller.taskRow({id:7,title:'<Task>',priority:'High',category:'Study',status:'todo'},true);
   assert.match(html,/&lt;Task&gt;/);
   assert.match(html,/data-edit-task="7"/);
