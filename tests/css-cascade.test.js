@@ -43,3 +43,18 @@ test('habit icon theme styles rely on selector specificity, not important flags'
   assert.match(lightRule,/background:\s*rgba\(4, 120, 87, 0\.08\);/);
   assert.doesNotMatch(vibrantRule+lightRule,/!important/i);
 });
+
+test('productivity score card theme overrides use the normal cascade',()=>{
+  const dark=html.match(/\/\* Vibrant gradients on card accents \*\/\s*\.score\s*\{([^}]*)\}/);
+  const darkGlow=html.match(/\.score::after\s*\{([^}]*)\}\s*\[data-theme="light"\] \.score/);
+  const light=html.match(/\[data-theme="light"\] \.score\s*\{([^}]*)\}/);
+  const lightGlow=html.match(/\[data-theme="light"\] \.score::after\s*\{([^}]*)\}/);
+  assert.ok(dark && darkGlow && light && lightGlow,'dark and light score card rules should exist');
+  assert.match(dark[1],/background:\s*linear-gradient/);
+  assert.match(dark[1],/border:\s*1px solid/);
+  assert.match(light[1],/background:\s*linear-gradient/);
+  assert.match(light[1],/border-color:\s*var\(--line\)/);
+  assert.match(darkGlow[1],/opacity:\s*0\.7;/);
+  assert.match(lightGlow[1],/opacity:\s*0\.7;/);
+  assert.doesNotMatch(dark[1]+darkGlow[1]+light[1]+lightGlow[1],/!important/i);
+});
