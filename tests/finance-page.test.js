@@ -11,7 +11,7 @@ function setup(state,prefs={budgetResetDay:1},today='2026-11-20'){
   };
   const controller=finance.create({
     $,queryAll:()=>[],getState:()=>state,getPrefs:()=>prefs,
-    dayKey:()=>today,money:value=>String(value),safe:value=>String(value),
+    dayKey:date=>date?date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0'):today,money:value=>String(value),safe:value=>String(value),
     save(){},toast(){},modal(){},getFinanceMonth:()=>null,setFinanceMonth(){}
   });
   return {controller,$};
