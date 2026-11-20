@@ -148,8 +148,11 @@ async function activateSession(session){
   if(preserveMemory)selected=window.LifeOSSyncCore.mergeSnapshots(previousBase,memorySnapshot,selected,{localFallbackTime:logicalNow(),remoteFallbackTime:stampMs(remote?.updated_at)});
   for(const item of legacy){
     const localSnapshot={workspace:normalizeWorkspace(item.workspace),preferences:mergePrefs(defaultPrefs(),item.preferences)};
-    const base=item.base?.workspace?{workspace:normalizeWorkspace(item.base.workspace),preferences:mergePrefs(defaultPrefs(),item.base.preferences)}:{workspace:seed(),preferences:defaultPrefs()};
-    selected=window.LifeOSSyncCore.mergeSnapshots(base,localSnapshot,selected,{localFallbackTime:item.meta?.localUpdatedAt||Date.now(),remoteFallbackTime:stampMs(remote?.updated_at)});
+    selected={workspace:mergeWorkspace(localSnapshot.workspace,selected.workspace),preferences:remote?mergePrefs(localSnapshot.preferences,selected.preferences):mergePrefs(defaultPrefs(),localSnapshot.preferences)};
+  }
+  if(legacy.length){
+    window.LifeOSSyncCore.stampWorkspaceChanges(cloudSnapshot.workspace,selected.workspace,logicalNow());
+    window.LifeOSSyncCore.stampPreferenceChanges(cloudSnapshot.preferences,selected.preferences,selected.workspace,logicalNow());
   }
   s=normalizeWorkspace(selected.workspace);prefs=mergePrefs(defaultPrefs(),selected.preferences);
   baseRevision=Number(remote?.revision)||0;baseStamp=remote?.updated_at||null;baseSnapshot=cloudSnapshot;lastCloudPayload=JSON.stringify(cloudSnapshot);
