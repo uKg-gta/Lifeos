@@ -15,14 +15,14 @@ Deno.serve(async(req:Request)=>{
  let sent=0,removed=0,skipped=0;const now=new Date();
  for(const p of prefs||[]){
   let x:Record<string,string>;try{x=local(now,p.timezone||"Asia/Kolkata")}catch{skipped++;continue}
-  const hour=Number(x.hour),today=`${x.year}-${x.month}-${x.day}`;
+  const hour=Number(x.hour),minute=Number(x.minute),today=`${x.year}-${x.month}-${x.day}`;
   if(quiet(hour,String(p.quiet_start).slice(0,5),String(p.quiet_end).slice(0,5))){skipped++;continue}
   const {data:r}=await db.from("lifeos_workspace").select("data").eq("user_id",p.user_id).maybeSingle(),w=r?.data?.workspace||{},cats=p.categories||{};
   const items:Array<{category:string;key:string;title:string;body:string}>=[];
-  const reminderSlot=[8,15,22].includes(hour);
+  const reminderSlot=minute===0&&[8,15,22].includes(hour);
   if(reminderSlot&&cats.tasks!==false)for(const t of w.tasks||[])if(t.status!=="done"&&t.due&&t.due<=today)items.push({category:"tasks",key:`${today}:task:${hour}:${t.id}:${t.due}`,title:"Task reminder",body:t.title||"You have a task due."});
-  if(hour===8&&cats.exams!==false)for(const e of w.exams||[])if(e.date){const days=Math.ceil((Date.parse(e.date+"T00:00:00Z")-Date.parse(today+"T00:00:00Z"))/86400000);if(days>=0&&days<=7)items.push({category:"exams",key:`${today}:exam:${e.name}`,title:"Exam coming up",body:`${e.name} is ${days===0?"today":days===1?"tomorrow":`in ${days} days`}.`})}
-  if(hour===8&&cats.habits!==false){const pending=(w.habits||[]).filter((h:any)=>(h.frequency!=="selected"||(h.days||[]).includes(new Date(today+"T12:00:00").getDay()))&&h.doneDate!==today);if(pending.length)items.push({category:"habits",key:`${today}:habits`,title:"Habit check-in",body:`${pending.length} habit(s) still to complete today.`})}
+  if(hour===8&&minute===0&&cats.exams!==false)for(const e of w.exams||[])if(e.date){const days=Math.ceil((Date.parse(e.date+"T00:00:00Z")-Date.parse(today+"T00:00:00Z"))/86400000);if(days>=0&&days<=7)items.push({category:"exams",key:`${today}:exam:${e.name}`,title:"Exam coming up",body:`${e.name} is ${days===0?"today":days===1?"tomorrow":`in ${days} days`}.`})}
+  if(hour===8&&minute===0&&cats.habits!==false){const pending=(w.habits||[]).filter((h:any)=>(h.frequency!=="selected"||(h.days||[]).includes(new Date(today+"T12:00:00").getDay()))&&h.doneDate!==today);if(pending.length)items.push({category:"habits",key:`${today}:habits`,title:"Habit check-in",body:`${pending.length} habit(s) still to complete today.`})}
   const target=Math.max(5,Math.min(1440,Math.round(Number(r?.data?.preferences?.studyTargetMins)||180)));
   const studied=(w.sessions||[]).filter((s:any)=>s.date===today).reduce((sum:number,s:any)=>sum+(Number(s.minutes)||0),0);
   if(reminderSlot&&cats.study!==false&&studied<target)items.push({category:"study",key:`${today}:study:${hour}`,title:"Study target reminder",body:`Study progress: ${studied} of ${target} minutes completed today.`});
