@@ -137,6 +137,8 @@ async function startCloud(){
 async function activateSession(session){
  const gate=$('#authGate');
  if(!supabase||!session?.user)return;const user=session.user;if(cloudUser?.id===user.id&&(cloudReady||activating))return;
+ const preserveMemory=cloudUser?.id===user.id&&dirty&&!!baseSnapshot;
+ const memorySnapshot=preserveMemory?currentSnapshot():null,previousBase=preserveMemory?baseSnapshot:null;
  activating=true;cloudReady=false;cloudUser=user;$('#authGate').style.display='flex';$('#authMessage').textContent='Loading your cloud workspace…';
  try{
   const remote=await fetchRemote();if(cloudUser?.id!==user.id)return;
