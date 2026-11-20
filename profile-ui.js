@@ -31,11 +31,13 @@
     function applyPrefs(){
       const prefs=getPrefs();
       prefs.picture=safePic(prefs.picture);
-      document.documentElement.dataset.theme=prefs.theme==='light'?'light':'dark';
+      const systemPrefersDark=typeof window!=='undefined'&&window.matchMedia?window.matchMedia('(prefers-color-scheme: dark)').matches:false;
+      const resolvedTheme=prefs.theme==='system'?(systemPrefersDark?'dark':'light'):prefs.theme;
+      document.documentElement.dataset.theme=resolvedTheme==='light'?'light':'dark';
       document.documentElement.dataset.accent=prefs.accent||'amber';
       document.documentElement.dataset.density=prefs.density||'comfortable';
       document.documentElement.dataset.font=prefs.font||'default';
-      $('#themeBtn').textContent=prefs.theme==='light'?'☾':'☼';
+      $('#themeBtn').textContent=resolvedTheme==='light'?'☾':'☼';
       $('#prefTheme').value=prefs.theme;$('#prefAccent').value=prefs.accent||'amber';$('#prefDensity').value=prefs.density;$('#prefFont').value=prefs.font;
       prefs.weekStart=1;$('#prefClock').value=prefs.clock||'12';$('#prefDate').value=prefs.dateFormat||'dmy';$('#prefBudgetResetDay').value=String(prefs.budgetResetDay||1);
       $('#summaryTasks').checked=prefs.summaries?.tasks!==false;$('#summaryStudy').checked=prefs.summaries?.study!==false;$('#summaryHabits').checked=prefs.summaries?.habits!==false;
@@ -46,8 +48,14 @@
       applyModuleVisibility();applySummaries();updateLifeOSGreeting();updateDateLabels();
     }
     function saveProfile(){const prefs=getPrefs();prefs.name=$('#profileNameInput').value.trim().slice(0,60);prefs.motto=$('#profileMottoInput').value.trim().slice(0,120);save();applyPrefs();toast('Profile saved.')}
-    function toggleTheme(){const prefs=getPrefs();prefs.theme=prefs.theme==='light'?'dark':'light';save();applyPrefs()}
+    function toggleTheme(){const prefs=getPrefs();const current=document.documentElement.dataset.theme||'dark';prefs.theme=current==='light'?'dark':'light';save();applyPrefs()}
     function toggleSidebar(){const sidebar=$('#sidebar');sidebar.classList.toggle('collapsed');$('#collapse').textContent=sidebar.classList.contains('collapsed')?'›':'‹';$('#settingsSidebar').textContent=sidebar.classList.contains('collapsed')?'Expand sidebar':'Collapse'}
+    if(typeof window!=='undefined'&&window.matchMedia){
+      const systemThemeQuery=window.matchMedia('(prefers-color-scheme: dark)');
+      const onSystemThemeChange=()=>{if(getPrefs().theme==='system')applyPrefs()};
+      if(systemThemeQuery.addEventListener)systemThemeQuery.addEventListener('change',onSystemThemeChange);
+      else if(systemThemeQuery.addListener)systemThemeQuery.addListener(onSystemThemeChange);
+    }
     return Object.freeze({saveProfile,applyPrefs,applyModuleVisibility,applySummaries,toggleTheme,toggleSidebar,getLifeOSGreeting,updateLifeOSGreeting});
   }
   return Object.freeze({create});
