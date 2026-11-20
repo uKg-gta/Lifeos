@@ -1,6 +1,10 @@
-# LifeOS
+# LifeOS — Personal Productivity, Study & Finance Workspace
 
-LifeOS is a browser-based personal workspace that brings everyday planning, study, and personal administration into one app.
+[Open LifeOS](https://ukg-gta.github.io/Lifeos/)
+
+LifeOS is a browser-based personal command centre for everyday planning, productivity, study management, and personal finance. It brings tasks, habits, goals, projects, study sessions, notes, reading resources, calendar planning, and finance tracking together in one workspace.
+
+Use LifeOS to organise daily priorities, build consistent routines, manage exam preparation, track progress, and keep personal administration in one place.
 
 ## What the app includes
 
