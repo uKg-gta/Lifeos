@@ -18,6 +18,8 @@ test('workspace state is not read from or written to browser local storage',()=>
   assert.match(app,/migration\.read\(user\.id\)/);
   assert.match(app,/const preserveMemory=cloudUser\?\.id===user\.id&&dirty&&!!baseSnapshot/);
   assert.match(app,/mergeSnapshots\(previousBase,memorySnapshot,selected/);
+  assert.match(app,/mergeWorkspace\(localSnapshot\.workspace,selected\.workspace\)/);
+  assert.match(app,/stampWorkspaceChanges\(cloudSnapshot\.workspace,selected\.workspace/);
   assert.match(app,/migration\.clear\(user\.id/);
 });
 test('sign-in loads the authenticated cloud workspace before setup',()=>{
