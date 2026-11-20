@@ -344,9 +344,9 @@ async function enablePush(){
   if(!cloudReady||!cloudUser||!supabase)throw Error('Sign in to LifeOS first.');
   if(!('serviceWorker'in navigator)||!('PushManager'in window)||!('Notification'in window))throw Error('Push notifications are not supported by this browser.');
   if(!window.isSecureContext)throw Error('Push notifications require a secure HTTPS connection.');
+  const {data:config,error:configError}=await supabase.functions.invoke('push-config',{method:'GET'});
+  if(configError)throw configError;if(!config?.ready||!config.publicKey)throw Error('Push delivery is not configured on the LifeOS server yet. Check the VAPID public key configuration.');
   const permission=await Notification.requestPermission();if(permission!=='granted')throw Error('Notification permission was not granted. Enable it in your browser settings and retry.');
-  const {data:config,error:configError}=await supabase.functions.invoke('push-config');
-  if(configError)throw configError;if(!config?.ready||!config.publicKey)throw Error('Push delivery is not configured on the LifeOS server yet. The server VAPID keys and scheduler must be set up first.');
   const registration=await navigator.serviceWorker.ready;
   let subscription=await registration.pushManager.getSubscription();
   if(!subscription)subscription=await registration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:pushKeyBytes(config.publicKey)});
