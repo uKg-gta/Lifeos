@@ -23,7 +23,9 @@ test('sign-in loads the authenticated cloud workspace before setup',()=>{
   assert.match(app,/window\.__lifeosCloudLoaded=true;cloudReady=true/);
   assert.match(app,/const remote=await fetchRemote\(\)/);
   assert.match(app,/migration\.read\(user\.id\)/);
-  assert.match(app,/setup\(\);if\(dirty\)await pushCloud\(\)/);
+  assert.match(app,/setup\(\);/);
+  assert.match(app,/let saved=true;if\(dirty\)saved=await pushCloud\(\)/);
+  assert.match(app,/if\(legacy\.length&&saved&&!dirty\)/);
 });
 test('offline continuation is not offered',()=>{
   assert.doesNotMatch(html,/id="continueOffline"/);
