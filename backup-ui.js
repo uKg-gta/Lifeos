@@ -4,7 +4,7 @@
   if(typeof module==='object'&&module.exports)module.exports=api;
   else root.LifeOSBackupUI=api;
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
-function create({getState,getPrefs,setPrefs,normalizeWorkspace,mergeWorkspace,mergePrefs,safe,toast,confirm:inPageConfirm,save,applyPrefs,render,nav,pushCloud,restorePrevious,storage=localStorage}){
+function create({getState,getPrefs,setPrefs,normalizeWorkspace,mergeWorkspace,mergePrefs,safe,toast,confirm:inPageConfirm,save,applyPrefs,render,nav,pushCloud,restorePrevious}){
  let pendingBackup=null;
  const $=s=>document.querySelector(s);
  function exportData(){let payload={app:'LifeOS',backupVersion:1,exportedAt:new Date().toISOString(),workspace:getState(),preferences:getPrefs()};let blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download='lifeos-workspace-backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);toast('Workspace backup exported.')}
@@ -18,8 +18,6 @@ function create({getState,getPrefs,setPrefs,normalizeWorkspace,mergeWorkspace,me
     if(mode==='replace')next=normalizeWorkspace(w);
     else{next=mergeWorkspace(JSON.parse(JSON.stringify(getState())),normalizeWorkspace(w));next.timer=getState().timer}
     Object.assign(getState(),next);if(x.preferences&&typeof x.preferences==='object')setPrefs(mergePrefs(getPrefs(),x.preferences));
-    try{storage.setItem('lifeos-review-v2',JSON.stringify(getState()));storage.setItem('lifeos-review-prefs',JSON.stringify(getPrefs()))}
-    catch(err){Object.assign(getState(),oldS);setPrefs(oldPrefs);throw new Error('Browser storage is full. Existing workspace was preserved; export data or remove the profile picture before retrying.')}
     pendingBackup=null;$('#restorePreview').style.display='none';$('#importFile').value='';
     save();applyPrefs();render();nav('home');
     const ok=await pushCloud();
