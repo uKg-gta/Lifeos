@@ -5,10 +5,12 @@
   else root.LifeOSLegacyMigration=api;
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
   function create(storage){
-    const store=storage||localStorage;
+    let store=storage;try{if(!store)store=localStorage}catch(e){}
+    if(!store)return Object.freeze({read:()=>[],clear:()=>false});
     const parse=value=>{try{return value?JSON.parse(value):null}catch(e){return null}};
     const validWorkspace=value=>value&&typeof value==='object'&&Array.isArray(value.tasks)&&Array.isArray(value.habits);
     function read(userId){
+      try{
       const found=[],meta=parse(store.getItem('lifeos-sync-meta'));
       if(meta?.user===userId){
         const workspace=parse(store.getItem('lifeos-review-v2'));
@@ -28,8 +30,10 @@
         });
       }
       return found;
+      }catch(e){return []}
     }
     function clear(userId,sources){
+      try{
       const allowed=new Set(sources||[]);
       const meta=parse(store.getItem('lifeos-sync-meta'));
       if(meta?.user===userId&&allowed.has('active')){
@@ -39,6 +43,8 @@
         const archive=parse(store.getItem(source));
         if(archive?.sourceUserId===userId)store.removeItem(source);
       }
+      return true;
+      }catch(e){return false}
     }
     return Object.freeze({read,clear});
   }
