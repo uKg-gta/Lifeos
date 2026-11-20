@@ -211,6 +211,7 @@ function bindGlobalsOnce(){
   });
   window.addEventListener('pagehide',flushCloud);
   window.addEventListener('online',()=>{if(!cloudReady){startCloud();return}if(dirty)pushCloud();else syncNow()});
+  window.addEventListener('offline',()=>{$('#authGate').style.display='flex';$('#authMessage').textContent='LifeOS requires an internet connection. Reconnect to access your cloud workspace.';setSync('Offline — reconnect to continue using LifeOS.')});
   setInterval(()=>{updateDateLabels();updateLifeOSGreeting();dayCheck()},30000);
 }
 
