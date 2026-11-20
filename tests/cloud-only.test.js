@@ -21,7 +21,7 @@ test('sign-in loads the authenticated cloud workspace before setup',()=>{
 });
 test('offline continuation is not offered',()=>{
   assert.doesNotMatch(html,/id="continueOffline"/);
-  assert.match(app,/offlineButton\)offlineButton\.hidden=true/);
+  assert.doesNotMatch(app,/continueOffline/);
 });
 test('service worker does not cache app files or workspace data',()=>{
   assert.doesNotMatch(worker,/caches\.open|cache\.addAll|cache\.put|respondWith/);
