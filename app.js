@@ -9,9 +9,8 @@ let s=seed(), prefs={theme:'dark',accent:'amber',density:'comfortable',font:'def
 const weight=p=>formatUtils.priorityWeight(p), todayTasks=()=>s.tasks.filter(t=>t.date==='today'), score=()=>{let a=todayTasks(),total=a.reduce((n,t)=>n+weight(t.priority),0);return total?Math.round(a.filter(t=>t.status==='done').reduce((n,t)=>n+weight(t.priority),0)/total*100):null}, mins=m=>formatUtils.formatMinutes(m), money=n=>formatUtils.formatRupees(n), fmtsec=n=>formatUtils.formatClockSeconds(n);
 let supabase=null, cloudUser=null, cloudReady=false, cloudTimer=null, applyingRemote=false, lastCloudPayload='', baseStamp=null, baseRevision=0, pushingStamp=null, pushing=false, pushQueued=false, pushPromise=null, pendingCloudConflict=null, activating=false, retryTimer=null, retryCount=0, dirty=false, lastDay=dayKey();
 /* ===== Data hygiene, sync and auth (rewritten) ===== */
-const META_KEY='lifeos-sync-meta',BASE_KEY='lifeos-cloud-base',CACHE_KEYS=['lifeos-review-v2','lifeos-review-prefs',BASE_KEY];
-let initialLocalCachePresent=false,offlineModeChosen=false,setupComplete=false,lastLocalSnapshot=null,authSubscription=null,pauseForConflict=false;
-try{const initial=JSON.parse(localStorage.getItem(CACHE_KEYS[0]));initialLocalCachePresent=!!(initial&&Array.isArray(initial.tasks))}catch(e){}
+let setupComplete=false,lastLocalSnapshot=null,authSubscription=null,baseSnapshot=null,syncMetaState={};
+let initialLocalCachePresent=false,offlineModeChosen=false,pauseForConflict=false;
 const defaultPrefs=()=>({theme:'dark',accent:'amber',density:'comfortable',font:'default',name:'',motto:'',avatar:'UG',picture:'',hiddenModules:[],summaries:{tasks:true,study:true,habits:true},weekStart:1,clock:'12',dateFormat:'dmy',budgetResetDay:1,studyTargetMins:180});
 const num=(v,d=0)=>{v=Number(v);return Number.isFinite(v)?v:d};
 const str=(v,d='',n=500)=>typeof v==='string'?v.slice(0,n):(typeof v==='number'&&Number.isFinite(v)?String(v):d);
@@ -69,364 +68,82 @@ function mergeWorkspace(remote,local){
   return out;
 }
 
-/* ----- local cache + sync metadata ----- */
-function readMeta(){try{return JSON.parse(localStorage.getItem(META_KEY))||{}}catch(e){return {}}}
-function writeMeta(p){try{localStorage.setItem(META_KEY,JSON.stringify({...readMeta(),...p}))}catch(e){}}
-function readBaseSnapshot(){try{const value=JSON.parse(localStorage.getItem(BASE_KEY));return value&&value.workspace?value:null}catch(e){return null}}
-function writeBaseSnapshot(value){try{localStorage.setItem(BASE_KEY,JSON.stringify(value))}catch(e){console.warn('LifeOS could not store its last cloud version on this device.')}}
+/* ----- cloud-only workspace and sync ----- */
+function readMeta(){return syncMetaState}
+function writeMeta(value){syncMetaState={...syncMetaState,...value}}
+function readBaseSnapshot(){return baseSnapshot}
+function writeBaseSnapshot(value){baseSnapshot=value}
+function writeCache(){return true}
 function currentSnapshot(){return JSON.parse(JSON.stringify({workspace:s,preferences:prefs}))}
-function clearLocalCache(){try{CACHE_KEYS.concat(META_KEY).forEach(k=>localStorage.removeItem(k));initialLocalCachePresent=false;lastLocalSnapshot=null}catch(e){}}
-function writeCache(){try{localStorage.setItem('lifeos-review-v2',JSON.stringify(s));localStorage.setItem('lifeos-review-prefs',JSON.stringify(prefs))}catch(e){return false}return true}
-function setSync(t){const el=$('#syncStatus');if(el)el.textContent=t}
+function load(){s=seed();prefs=defaultPrefs();lastLocalSnapshot=currentSnapshot()}
+function setSync(message){const el=$('#syncStatus');if(el)el.textContent=message}
+function clearConflictActions(){const el=$('#syncConflictActions');if(el){el.hidden=true;el.style.display='none';el.innerHTML=''}}
 function save(){
-  if(!applyingRemote){
-    const before=lastLocalSnapshot,stamp=logicalNow();
-    if(before){window.LifeOSSyncCore.stampWorkspaceChanges(before.workspace,s,stamp);window.LifeOSSyncCore.stampPreferenceChanges(before.preferences,prefs,s,stamp)}
-    const next=currentSnapshot();
-    if(before&&JSON.stringify(next)!==JSON.stringify(before)){dirty=true;s._lifeosSync.workspaceStamp=Math.max(num(s._lifeosSync.workspaceStamp),stamp)}
-    if(!writeCache())toast('Browser cache is full. Cloud sync may still work.');else lastLocalSnapshot=next;
-    if(dirty){const meta=readMeta();writeMeta({user:cloudUser?.id||meta.user||null,dirty:true,revision:baseRevision,localUpdatedAt:logicalNow()})}
-  }else if(!writeCache())toast('Browser cache is full. Cloud sync may still work.');
-  if(cloudReady&&!applyingRemote){clearTimeout(cloudTimer);cloudTimer=setTimeout(()=>{cloudTimer=null;pushCloud()},650);setSync('Changes waiting to sync…')}
+ if(applyingRemote)return;
+ if(!cloudReady){setSync('Internet connection and sign-in are required to save.');return}
+ const before=lastLocalSnapshot,stamp=logicalNow();
+ if(before){window.LifeOSSyncCore.stampWorkspaceChanges(before.workspace,s,stamp);window.LifeOSSyncCore.stampPreferenceChanges(before.preferences,prefs,s,stamp)}
+ const next=currentSnapshot();
+ if(before&&JSON.stringify(next)!==JSON.stringify(before)){dirty=true;s._lifeosSync.workspaceStamp=Math.max(num(s._lifeosSync.workspaceStamp),stamp)}
+ lastLocalSnapshot=next;
+ if(dirty){clearTimeout(cloudTimer);cloudTimer=setTimeout(()=>{cloudTimer=null;pushCloud()},400);setSync('Saving to your cloud workspace…')}
 }
-function load(){
-  if(window.__lifeosCloudLoaded)return;
-  try{let v=JSON.parse(localStorage.getItem('lifeos-review-v2'));if(v&&v.tasks&&v.habits)s=normalizeWorkspace(v)}catch(e){}
-  try{let p=JSON.parse(localStorage.getItem('lifeos-review-prefs'));if(p&&typeof p==='object')prefs=mergePrefs(prefs,p)}catch(e){}
-  const meta=readMeta();dirty=!!meta.dirty;baseStamp=meta.stamp||null;baseRevision=Number(meta.revision)||0;lastLocalSnapshot=currentSnapshot();
-}
-
-/* ----- cloud sync (optimistic concurrency + merge on conflict) ----- */
-function markClean(ser){
-  if(ser===JSON.stringify({workspace:s,preferences:prefs})){
-    dirty=false;
-    const snapshot=JSON.parse(ser);writeBaseSnapshot(snapshot);lastLocalSnapshot=currentSnapshot();
-    if(cloudUser)writeMeta({user:cloudUser.id,dirty:false,revision:baseRevision,stamp:baseStamp});
-  }
-}
-async function fetchRemote(){
-  const {data,error}=await supabase.from('lifeos_workspace').select('data,updated_at,revision').eq('user_id',cloudUser.id).maybeSingle();
-  if(error)throw error;
-  return data&&data.data?data:null;
-}
-function clearConflictActions(){
-  const el=$('#syncConflictActions');
-  pauseForConflict=false;
-  if(el){el.hidden=true;el.style.display='none';el.innerHTML=''}
-}
-function showCloudConflict(row){
-  pendingCloudConflict=row||{_deleted:true,revision:0};
-  pauseForConflict=true;
-  setSync('Automatic merge paused after repeated changes. Both copies are preserved; choose how to continue.');
-  const el=$('#syncConflictActions');
-  if(!el)return;
-  el.hidden=false;el.style.display='block';
-  el.innerHTML='<div class="tiny muted">Your local changes have not been uploaded or discarded.</div><div class="setting-control"><button class="btn" id="conflictExport">Download local backup</button><button class="btn" id="conflictLoadCloud">Use cloud version</button><button class="btn danger-btn" id="conflictKeepLocal">Replace cloud with this device</button></div>';
-  $('#conflictExport').onclick=()=>exportData();
-  $('#conflictLoadCloud').onclick=()=>resolveCloudConflict('cloud');
-  $('#conflictKeepLocal').onclick=()=>resolveCloudConflict('local');
-}
-async function resolveCloudConflict(choice){
-  if(choice==='cloud'){
-    inPageConfirm('Use cloud version','A backup of this device will be downloaded first. The latest cloud workspace will then replace the local copy.',async()=>{
-      exportData();
-      try{
-        const remote=await fetchRemote();
-        if(pendingCloudConflict&&Number(pendingCloudConflict.revision)>Number(remote?.revision||0)){
-          showCloudConflict(pendingCloudConflict);return;
-        }
-        s=normalizeWorkspace(remote?.data?.workspace||{});
-        prefs=mergePrefs(defaultPrefs(),remote?.data?.preferences);
-        baseRevision=Number(remote?.revision)||0;baseStamp=remote?.updated_at||null;
-        const snapshot={workspace:s,preferences:prefs};lastCloudPayload=JSON.stringify(snapshot);writeBaseSnapshot(snapshot);dirty=false;pendingCloudConflict=null;
-        lastLocalSnapshot=currentSnapshot();writeCache();writeMeta({user:cloudUser.id,revision:baseRevision,stamp:baseStamp,dirty:false});
-        clearConflictActions();applyPrefs();render();setSync('Loaded the latest cloud workspace. Local backup downloaded.');
-      }catch(e){toast('Could not load the cloud copy: '+(e.message||'check your connection'))}
-    });
-    return;
-  }
-  if(choice==='local'){
-    inPageConfirm('Replace cloud workspace','This will replace the latest cloud workspace with the copy on this device. A local backup will be downloaded first. Continue only if this device has the version you want to keep.',async()=>{
-      exportData();
-      try{
-        const remote=await fetchRemote();
-        baseRevision=Number(remote?.revision)||0;baseStamp=remote?.updated_at||null;
-        const remoteSnapshot=remote?.data?{workspace:normalizeWorkspace(remote.data.workspace),preferences:mergePrefs(defaultPrefs(),remote.data.preferences)}:{workspace:normalizeWorkspace({}),preferences:defaultPrefs()};
-        lastCloudPayload=JSON.stringify(remoteSnapshot);writeBaseSnapshot(remoteSnapshot);
-        pendingCloudConflict=null;clearConflictActions();dirty=true;
-        writeMeta({user:cloudUser.id,revision:baseRevision,dirty:true});
-        const ok=await pushCloud();
-        if(!ok&&!pendingCloudConflict)setSync('Cloud replacement was not confirmed. Your local copy remains available.');
-      }catch(e){showCloudConflict(await fetchRemote().catch(()=>null));toast('Could not prepare the cloud replacement: '+(e.message||'check your connection'))}
-    },true);
-  }
+async function fetchRemote(){const {data,error}=await supabase.from('lifeos_workspace').select('data,updated_at,revision').eq('user_id',cloudUser.id).maybeSingle();if(error)throw error;return data&&data.data?data:null}
+function markClean(serialized){if(serialized===JSON.stringify(currentSnapshot())){dirty=false;baseSnapshot=JSON.parse(serialized);lastLocalSnapshot=currentSnapshot();lastCloudPayload=serialized;setSync('Saved to your cloud workspace.')}}
+function mergeRemoteRow(row){
+ const remote={workspace:normalizeWorkspace(row?.data?.workspace||{}),preferences:mergePrefs(defaultPrefs(),row?.data?.preferences)};
+ const merged=window.LifeOSSyncCore.mergeSnapshots(baseSnapshot||{workspace:seed(),preferences:defaultPrefs()},currentSnapshot(),remote,{localFallbackTime:logicalNow(),remoteFallbackTime:stampMs(row?.updated_at)});
+ s=normalizeWorkspace(merged.workspace);prefs=mergePrefs(defaultPrefs(),merged.preferences);baseRevision=Number(row?.revision)||0;baseStamp=row?.updated_at||null;
+ baseSnapshot=remote;lastCloudPayload=JSON.stringify(remote);lastLocalSnapshot=currentSnapshot();dirty=JSON.stringify(currentSnapshot())!==lastCloudPayload;applyPrefs();render();
 }
 function applyRemoteRow(row){
-  if(!row||!row.data||!cloudUser)return;
-  const revision=Number(row.revision)||0;
-  if(revision<=baseRevision)return;
-  if(dirty||!!cloudTimer||pushing||!!pushPromise){pendingCloudConflict=row;if(!cloudTimer&&!pushing&&!pushPromise)pushCloud();return}
-  s=normalizeWorkspace(row.data.workspace);prefs=mergePrefs(defaultPrefs(),row.data.preferences);
-  baseRevision=revision;baseStamp=row.updated_at||null;
-  const remoteSnapshot={workspace:s,preferences:prefs};lastCloudPayload=JSON.stringify(remoteSnapshot);writeBaseSnapshot(remoteSnapshot);dirty=false;
-  lastLocalSnapshot=currentSnapshot();writeCache();writeMeta({user:cloudUser.id,revision:baseRevision,stamp:baseStamp,dirty:false});
-  applyPrefs();render();setSync('Updated from another device.');
-}
-function mergeRemoteRow(row){
-  if(!cloudUser)return;
-  const remoteSnapshot={workspace:normalizeWorkspace(row?.data?.workspace||{}),preferences:mergePrefs(defaultPrefs(),row?.data?.preferences)};
-  const remoteSer=JSON.stringify(remoteSnapshot),meta=readMeta(),storedBase=readBaseSnapshot();
-  const localSnapshot=currentSnapshot();
-  if(!storedBase&&meta.dirty){const stamp=meta.localUpdatedAt||logicalNow();window.LifeOSSyncCore.stampWorkspaceChanges(null,localSnapshot.workspace,stamp)}
-  const baseSnapshot=storedBase?{workspace:normalizeWorkspace(storedBase.workspace),preferences:mergePrefs(defaultPrefs(),storedBase.preferences)}:{workspace:normalizeWorkspace({}),preferences:{}};
-  const merged=window.LifeOSSyncCore.mergeSnapshots(baseSnapshot,localSnapshot,remoteSnapshot,{localFallbackTime:meta.localUpdatedAt||Date.now(),remoteFallbackTime:stampMs(row?.updated_at)});
-  s=normalizeWorkspace(merged.workspace);prefs=mergePrefs(defaultPrefs(),merged.preferences);
-  baseRevision=Number(row?.revision)||0;baseStamp=row?.updated_at||null;lastCloudPayload=remoteSer;writeBaseSnapshot(remoteSnapshot);
-  pendingCloudConflict=null;pauseForConflict=false;dirty=JSON.stringify({workspace:s,preferences:prefs})!==lastCloudPayload;
-  lastLocalSnapshot=currentSnapshot();writeCache();writeMeta({user:cloudUser.id,revision:baseRevision,stamp:baseStamp,dirty,localUpdatedAt:dirty?Date.now():meta.localUpdatedAt});
-  clearConflictActions();applyPrefs();render();
-  setSync(dirty?'Merged this device with the latest cloud entries; syncing…':'Your latest entries are synced.');
-}
-async function doPush(){
-  const payload={workspace:s,preferences:prefs},ser=JSON.stringify(payload);
-  if(ser===lastCloudPayload){markClean(ser);return true}
-  const {data,error}=await supabase.rpc('save_lifeos_workspace',{p_data:payload,p_expected_revision:baseRevision});
-  if(error)throw error;
-  const result=window.LifeOSSyncCore.parseSaveResult(data);
-  if(!result.saved){
-    const remote=await fetchRemote();
-    const conflict=new Error('The cloud workspace changed after this device last loaded it.');
-    conflict.code='LIFEOS_REVISION_CONFLICT';conflict.remote=remote;throw conflict;
-  }
-  baseRevision=result.newRevision;baseStamp=null;
-  lastCloudPayload=ser;writeBaseSnapshot(payload);writeMeta({user:cloudUser.id,revision:baseRevision,stamp:baseStamp,dirty:JSON.stringify({workspace:s,preferences:prefs})!==ser,localUpdatedAt:readMeta().localUpdatedAt});
-  if(pendingCloudConflict&&Number(pendingCloudConflict.revision)<=baseRevision)pendingCloudConflict=null;
-  markClean(ser);retryCount=0;clearConflictActions();
-  setSync('Synced just now · changes are saved to your cloud workspace.');
-  const st=$('#accountStatus');if(st)st.textContent='Connected';
-  return true;
-}
-async function runPushLoop(){
-  let conflicts=0;
-  while(true){
-    if(pendingCloudConflict&&Number(pendingCloudConflict.revision)<=baseRevision)pendingCloudConflict=null;
-    if(pendingCloudConflict&&Number(pendingCloudConflict.revision)>baseRevision){
-      if(++conflicts>5){showCloudConflict(pendingCloudConflict);return false}
-      const latest=pendingCloudConflict;pendingCloudConflict=null;mergeRemoteRow(latest);
-    }
-    const current=JSON.stringify({workspace:s,preferences:prefs});
-    if(current===lastCloudPayload){if(dirty)markClean(current);if(!pushQueued)break}
-    pushQueued=false;pushing=true;
-    try{await doPush()}
-    catch(e){
-      if(e?.code!=='LIFEOS_REVISION_CONFLICT')throw e;
-      if(++conflicts>5){showCloudConflict(e.remote);return false}
-      mergeRemoteRow(e.remote);
-    }finally{pushing=false;pushingStamp=null}
-    if(!pushQueued&&JSON.stringify({workspace:s,preferences:prefs})===lastCloudPayload&&!(pendingCloudConflict&&Number(pendingCloudConflict.revision)>baseRevision))break;
-  }
-  return true;
+ if(!row||!row.data||!cloudUser)return;const rev=Number(row.revision)||0;if(rev<=baseRevision)return;
+ if(dirty||cloudTimer||pushing||pushPromise){mergeRemoteRow(row);if(dirty)pushCloud();return}
+ applyingRemote=true;try{s=normalizeWorkspace(row.data.workspace);prefs=mergePrefs(defaultPrefs(),row.data.preferences);baseRevision=rev;baseStamp=row.updated_at||null;baseSnapshot=currentSnapshot();lastCloudPayload=JSON.stringify(baseSnapshot);lastLocalSnapshot=currentSnapshot();dirty=false;applyPrefs();render();setSync('Updated from your cloud workspace.')}finally{applyingRemote=false}
 }
 async function pushCloud(){
-  clearTimeout(cloudTimer);cloudTimer=null;
-  if(!supabase||!cloudUser||!cloudReady)return false;
-  if(pauseForConflict)return false;
-  if(pushPromise){pushQueued=true;return pushPromise}
-  const task=(async()=>{
-    try{return await runPushLoop()}
-    catch(e){
-      if(e?.code==='LIFEOS_REVISION_CONFLICT'){showCloudConflict(e.remote);return false}
-      console.error('LifeOS cloud sync:',e);
-      setSync('Sync paused: '+(e.message||'check connection and database setup')+' · will retry.');
-      scheduleRetry();return false;
-    }
-  })();
-  pushPromise=task;
-  try{return await task}
-  finally{if(pushPromise===task)pushPromise=null}
+ clearTimeout(cloudTimer);cloudTimer=null;if(!supabase||!cloudUser||!cloudReady)return false;if(pushPromise){pushQueued=true;return pushPromise}
+ const task=(async()=>{for(let n=0;n<6;n++){const payload=currentSnapshot(),serial=JSON.stringify(payload);if(serial===lastCloudPayload){markClean(serial);if(!pushQueued)return true;pushQueued=false;continue}
+  pushing=true;try{const {data,error}=await supabase.rpc('save_lifeos_workspace',{p_data:payload,p_expected_revision:baseRevision});if(error)throw error;const result=window.LifeOSSyncCore.parseSaveResult(data);
+   if(!result.saved){const remote=await fetchRemote();if(!remote)throw Error('Could not reload the changed cloud workspace.');mergeRemoteRow(remote);continue}
+   baseRevision=result.newRevision;baseSnapshot=JSON.parse(serial);lastCloudPayload=serial;dirty=JSON.stringify(currentSnapshot())!==serial;retryCount=0;setSync(dirty?'Saving latest changes…':'Synced. All changes are saved online.');if(!dirty&&!pushQueued)return true;pushQueued=false;
+  }finally{pushing=false}}
+  setSync('Cloud changes remain pending. Keep LifeOS open and retry.');return false
+ })().catch(error=>{console.error('LifeOS cloud save failed:',error);setSync('Could not save online: '+(error?.message||'check your connection'));return false});
+ pushPromise=task;try{return await task}finally{if(pushPromise===task)pushPromise=null}
 }
-function scheduleRetry(){
-  retryCount++;clearTimeout(retryTimer);
-  retryTimer=setTimeout(()=>{if(cloudReady&&dirty&&!pauseForConflict)pushCloud()},Math.min(60000,2000*Math.pow(2,Math.min(retryCount,5))));
-}
-async function flushCloud(){
-  clearTimeout(cloudTimer);cloudTimer=null;
-  if(!cloudReady)return false;
-  return pushCloud();
-}
-async function syncNow(){
-  if(!cloudReady||!supabase||!cloudUser)return;
-  try{const row=await fetchRemote();if(row)applyRemoteRow(row)}catch(e){console.warn('LifeOS refresh failed:',e)}
-}
-
-function preserveForeignLocalCache(meta){
-  const sourceUser=String(meta?.user||'unknown').replace(/[^a-zA-Z0-9_-]/g,'_');
-  const recoveryKey='lifeos-recovery-'+sourceUser+'-'+Date.now();
-  const recovery={
-    sourceUserId:meta?.user||null,
-    savedAt:new Date().toISOString(),
-    workspace:localStorage.getItem('lifeos-review-v2'),
-    preferences:localStorage.getItem('lifeos-review-prefs'),
-    cloudBase:localStorage.getItem(BASE_KEY),
-    syncMeta:localStorage.getItem(META_KEY)
-  };
-  try{
-    // Never replace an existing recovery copy; every account switch gets its own archive.
-    localStorage.setItem(recoveryKey,JSON.stringify(recovery));
-    return recoveryKey;
-  }catch(error){
-    console.error('LifeOS could not preserve the previous account cache:',error);
-    throw new Error('Could not preserve this device’s previous workspace. No local data was changed. Free some device storage and retry.');
-  }
-}
+async function flushCloud(){clearTimeout(cloudTimer);cloudTimer=null;if(!cloudReady)return false;if(!dirty)return true;return pushCloud()}
+async function syncNow(){if(!cloudReady||!supabase||!cloudUser)return;try{const row=await fetchRemote();if(row)applyRemoteRow(row)}catch(error){cloudReady=false;$('#authGate').style.display='flex';$('#authMessage').textContent='An internet connection is required to access your workspace.';setSync('Cloud connection lost. Reconnect to continue.')}}
 async function signOutFromLifeOS(){
-  const btn=$('#signOutBtn');
-  if(!supabase){toast('Cloud client is unavailable. Your local workspace is unchanged.');return}
-  if(btn?.disabled)return;
-  const user=cloudUser,wasDirty=dirty,wasCloudReady=cloudReady,meta=readMeta();
-  if(user){
-    // Persist the latest local snapshot before asking Supabase to end the session.
-    if(!writeCache()){toast('Could not save the local workspace. Sign-out was cancelled to protect your entries.');return}
-    writeMeta({user:user.id,revision:baseRevision,stamp:baseStamp,dirty:wasDirty,localUpdatedAt:wasDirty?(meta.localUpdatedAt||logicalNow()):meta.localUpdatedAt});
-  }
-  clearTimeout(cloudTimer);cloudTimer=null;cloudReady=false;
-  if(btn)btn.disabled=true;
-  try{
-    // Do not wait for Realtime teardown: it must never block authentication logout.
-    const {error}=await supabase.auth.signOut({scope:'local'});
-    if(error)throw error;
-    if(cloudUser)handleSignedOut('Signed out. Your saved workspace remains on this device.');
-    else{
-      $('#accountStatus').textContent='On this device';
-      $('#accountEmail').textContent='Signed out. Your saved workspace remains on this device.';
-      $('#connectCloudBtn').hidden=false;$('#signOutBtn').hidden=true;
-      setSync(wasDirty?'Signed out. Unsynced changes remain saved on this device.':'Signed out. Your workspace remains saved on this device.');
-    }
-    $('#authGate').style.display='flex';
-    $('#authMessage').textContent='You have signed out of LifeOS. Your device data has been kept.';
-  }catch(error){
-    cloudReady=wasCloudReady&&!!cloudUser;
-    toast('Could not sign out: '+(error?.message||'Please retry.'));
-  }finally{
-    if(btn)btn.disabled=false;
-  }
+ const btn=$('#signOutBtn');if(!supabase||btn?.disabled)return;
+ if(dirty){if(btn)btn.disabled=true;const ok=await flushCloud();if(!ok||dirty){if(btn)btn.disabled=false;toast('Sign-out paused: your latest changes are not confirmed in the cloud. Reconnect and retry.');return}}
+ cloudReady=false;if(btn)btn.disabled=true;try{const {error}=await supabase.auth.signOut({scope:'local'});if(error)throw error;handleSignedOut('Signed out. Your workspace remains in the cloud.')}catch(error){cloudReady=!!cloudUser;toast('Could not sign out: '+(error?.message||'Please retry.'))}finally{if(btn)btn.disabled=false}
 }
-function handleSignedOut(msg){
-  const retainedUnsyncedChanges=dirty;
-  cloudReady=false;activating=false;clearTimeout(cloudTimer);cloudTimer=null;pendingCloudConflict=null;baseRevision=0;clearConflictActions();
-  if(window.__lifeosChannel&&supabase){supabase.removeChannel(window.__lifeosChannel);window.__lifeosChannel=null}
-  cloudUser=null;window.__lifeosCloudLoaded=false;
-  $('#accountStatus').textContent='On this device';$('#accountEmail').textContent='Your saved workspace remains available here. Connect Google to sync across devices.';$('#connectCloudBtn').hidden=false;$('#signOutBtn').hidden=true;
-  setSync(retainedUnsyncedChanges?'Session ended. Unsynced changes are saved on this device.':'Offline-ready. Connect Google when you want cloud sync.');
-  $('#authGate').style.display='none';$('#authMessage').textContent=msg||'Your session ended. You can keep working offline and reconnect Google later.';
+function handleSignedOut(message){
+ cloudReady=false;activating=false;dirty=false;baseRevision=0;baseStamp=null;lastCloudPayload='';baseSnapshot=null;lastLocalSnapshot=null;cloudUser=null;s=seed();prefs=defaultPrefs();window.__lifeosCloudLoaded=false;clearTimeout(cloudTimer);cloudTimer=null;clearConflictActions();
+ if(window.__lifeosChannel&&supabase){supabase.removeChannel(window.__lifeosChannel);window.__lifeosChannel=null}
+ $('#accountStatus').textContent='Signed out';$('#accountEmail').textContent='Sign in to load your cloud workspace.';$('#connectCloudBtn').hidden=false;$('#signOutBtn').hidden=true;$('#authGate').style.display='flex';$('#authMessage').textContent=message||'Sign in to access your online workspace.';setSync('Not connected.');
 }
 async function startCloud(){
-  const gate=$('#authGate'),msg=$('#authMessage');
-  $('#signOutBtn').onclick=signOutFromLifeOS;
-  // Bind the controls before checking the Supabase SDK. If the SDK fails to load,
-  // the button must still respond with a visible error instead of doing nothing.
-  const startGoogleSignIn=async()=>{
-    if(!supabase){await startCloud();if(!supabase)return}
-    msg.textContent='Opening Google sign-in…';
-    try{
-      const {error}=await supabase.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.href.split('#')[0]}});
-      if(error)msg.textContent='Sign-in failed: '+error.message;
-    }catch(error){msg.textContent='Sign-in failed: '+(error?.message||'Please reload and try again.')}
-  };
-  $('#googleSignIn').onclick=startGoogleSignIn;
-  $('#connectCloudBtn').onclick=startGoogleSignIn;
-  $('#continueOffline').onclick=()=>{offlineModeChosen=true;gate.style.display='none';setSync('Offline mode. Changes are saved on this device and will sync after you connect Google.')};
-  try{
-    if(!window.supabase?.createClient)throw new Error('Could not load the Supabase client. Check your internet connection and reload.');
-    if(!supabase)supabase=window.supabase.createClient('https://dtnyyqnyfksxvgedswhj.supabase.co','sb_publishable_-Bppvb1O6mYvca2y8GNFXQ_m0adWMEh');
-    if(!authSubscription){
-      const {data:{subscription}}=supabase.auth.onAuthStateChange((event,session)=>{
-        if(session&&event==='SIGNED_IN')setTimeout(()=>activateSession(session),0);
-        if(event==='SIGNED_OUT'&&cloudUser)handleSignedOut();
-      });
-      authSubscription=subscription;window.addEventListener('beforeunload',()=>authSubscription?.unsubscribe());
-    }
-    const {data:{session},error}=await supabase.auth.getSession();
-    if(error)throw error;
-    if(session){await activateSession(session);return}
-    cloudUser=null;cloudReady=false;$('#accountStatus').textContent='On this device';$('#accountEmail').textContent='Your workspace is available here. Connect Google to sync it across devices.';$('#connectCloudBtn').hidden=false;$('#signOutBtn').hidden=true;setSync(dirty?'Saved on this device; waiting to sync.':'Offline-ready. Sign in when you want cloud sync.');gate.style.display=initialLocalCachePresent||offlineModeChosen?'none':'flex';
-  }catch(e){cloudReady=false;$('#accountStatus').textContent='Offline';$('#connectCloudBtn').hidden=false;$('#signOutBtn').hidden=true;setSync('Offline mode. Changes are saved on this device. Connect Google when online to sync.');gate.style.display=initialLocalCachePresent||offlineModeChosen?'none':'flex';msg.textContent='Cloud connection is unavailable. You can continue offline and connect when online.'}
+ const gate=$('#authGate'),msg=$('#authMessage');$('#signOutBtn').onclick=signOutFromLifeOS;
+ const signIn=async()=>{if(!supabase){await startCloud();if(!supabase)return}msg.textContent='Opening Google sign-in…';try{const {error}=await supabase.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.href.split('#')[0]}});if(error)msg.textContent='Sign-in failed: '+error.message}catch(error){msg.textContent='Sign-in failed: '+(error?.message||'Please retry.')}}
+ $('#googleSignIn').onclick=signIn;$('#connectCloudBtn').onclick=signIn;const offline=$('#continueOffline');if(offline)offline.hidden=true;
+ try{if(!window.supabase?.createClient)throw Error('Could not load the Supabase client.');if(!supabase)supabase=window.supabase.createClient('https://dtnyyqnyfksxvgedswhj.supabase.co','sb_publishable_-Bppvb1O6mYvca2y8GNFXQ_m0adWMEh');
+  if(!authSubscription){const {data:{subscription}}=supabase.auth.onAuthStateChange((event,session)=>{if(session&&event==='SIGNED_IN')setTimeout(()=>activateSession(session),0);if(event==='SIGNED_OUT'&&cloudUser)handleSignedOut()});authSubscription=subscription;window.addEventListener('beforeunload',()=>authSubscription?.unsubscribe())}
+  const {data:{session},error}=await supabase.auth.getSession();if(error)throw error;if(session){await activateSession(session);return}
+  cloudUser=null;cloudReady=false;$('#accountStatus').textContent='Signed out';$('#accountEmail').textContent='Sign in to load your cloud workspace.';$('#connectCloudBtn').hidden=false;$('#signOutBtn').hidden=true;setSync('Sign in to access your online data.');gate.style.display='flex';
+ }catch(error){cloudReady=false;gate.style.display='flex';$('#accountStatus').textContent='Connection required';$('#connectCloudBtn').hidden=false;$('#signOutBtn').hidden=!cloudUser;setSync('Online connection required.');msg.textContent='LifeOS needs an internet connection: '+(error?.message||'Please retry.')}
 }
 async function activateSession(session){
-  if(!supabase||!session?.user)return;
-  const nextUser=session.user;
-  pendingCloudConflict=null;
-  if(cloudUser?.id===nextUser.id&&(cloudReady||activating))return; // duplicate auth event
-  activating=true;cloudReady=false;cloudUser=nextUser;
-  $('#authGate').style.display='none';
-  try{
-    window.__lifeosCloudLoaded=true;
-    let activationStartSnapshot=currentSnapshot();
-    // A local copy is only trusted if it belongs to this same account.
-    const meta=readMeta(),cacheEligible=meta.user===nextUser.id||!meta.user;let cached=null;
-    if(cacheEligible){try{const v=JSON.parse(localStorage.getItem('lifeos-review-v2')),p=JSON.parse(localStorage.getItem('lifeos-review-prefs'));if(v&&Array.isArray(v.tasks))cached={ws:normalizeWorkspace(v),pr:mergePrefs(defaultPrefs(),p)}}catch(e){}}
-    if(!cacheEligible){
-      // Archive the previous account's local workspace before changing account context.
-      // Never merge another account's private data into this account automatically.
-      const recoveryKey=preserveForeignLocalCache(meta);
-      console.warn('LifeOS preserved a previous account workspace for recovery:',recoveryKey);
-      meta.user=nextUser.id;meta.dirty=false;meta.revision=0;meta.stamp=null;meta.localUpdatedAt=0;
-      baseStamp=null;baseRevision=0;s=seed();prefs=defaultPrefs();activationStartSnapshot=currentSnapshot();
-    }
-    let remote=null,offline=false,status='';
-    try{remote=await fetchRemote()}catch(e){offline=true;console.warn('LifeOS: keeping this device available offline',e)}
-    if(cloudUser?.id!==nextUser.id)return;
-    const latestMeta=readMeta(),liveSnapshot=currentSnapshot(),localChanged=!!latestMeta.dirty||JSON.stringify(liveSnapshot)!==JSON.stringify(activationStartSnapshot);
-    if(offline){
-      baseStamp=latestMeta.stamp||null;baseRevision=Number(latestMeta.revision)||0;dirty=!!latestMeta.dirty;
-      lastCloudPayload=dirty?'':JSON.stringify({workspace:s,preferences:prefs});
-      status='Offline: this device keeps working and will sync after reconnecting.';
-    }else if(remote){
-      const remoteSnapshot={workspace:normalizeWorkspace(remote.data.workspace),preferences:mergePrefs(defaultPrefs(),remote.data.preferences)},remoteSer=JSON.stringify(remoteSnapshot),remoteRevision=Number(remote.revision)||0;
-      // A device cache without a recorded cloud baseline is not safe to discard.
-      // Treat it as local-only data and merge it with the remote workspace, even
-      // when its dirty flag was never set by an earlier offline session.
-      if(cached||localChanged){
-        const localSnapshot=cached?{workspace:cached.ws,preferences:cached.pr}:liveSnapshot,storedBase=meta.user===nextUser.id?readBaseSnapshot():null;
-        if(!storedBase){const stamp=latestMeta.localUpdatedAt||logicalNow();window.LifeOSSyncCore.stampWorkspaceChanges(null,localSnapshot.workspace,stamp)}
-        const baseSnapshot=storedBase?{workspace:normalizeWorkspace(storedBase.workspace),preferences:mergePrefs(defaultPrefs(),storedBase.preferences)}:{workspace:normalizeWorkspace({}),preferences:defaultPrefs()};
-        const merged=window.LifeOSSyncCore.mergeSnapshots(baseSnapshot,localSnapshot,remoteSnapshot,{localFallbackTime:latestMeta.localUpdatedAt||logicalNow(),remoteFallbackTime:stampMs(remote.updated_at)});
-        s=normalizeWorkspace(merged.workspace);prefs=mergePrefs(defaultPrefs(),merged.preferences);baseRevision=remoteRevision;baseStamp=remote.updated_at||null;lastCloudPayload=remoteSer;writeBaseSnapshot(remoteSnapshot);
-        dirty=JSON.stringify({workspace:s,preferences:prefs})!==remoteSer;status=dirty?'Merged this device with the latest cloud entries; syncing…':'Cloud entries are up to date.';
-      }else{
-        s=remoteSnapshot.workspace;prefs=remoteSnapshot.preferences;baseRevision=remoteRevision;baseStamp=remote.updated_at||null;lastCloudPayload=remoteSer;writeBaseSnapshot(remoteSnapshot);dirty=false;status='Cloud sync is active.';
-      }
-    }else{
-      baseStamp=null;baseRevision=0;lastCloudPayload='';dirty=true;
-      writeBaseSnapshot({workspace:normalizeWorkspace({}),preferences:defaultPrefs()});status='New cloud workspace ready; saving this device’s entries.';
-    }
-    lastLocalSnapshot=currentSnapshot();
-    writeCache();writeMeta({user:nextUser.id,revision:baseRevision,dirty});
-    cloudReady=true;
-    $('#accountStatus').textContent=offline?'Offline':'Connected';
-    $('#accountEmail').textContent=cloudUser.email||'Signed in with Google';
-    $('#connectCloudBtn').hidden=true;$('#signOutBtn').hidden=false;
-    setSync(status);
-    $('#signOutBtn').onclick=signOutFromLifeOS;
-    setup();
-    if(!offline&&dirty&&!pendingCloudConflict)await pushCloud();
-    if(pendingCloudConflict)showCloudConflict(pendingCloudConflict);
-    if(window.__lifeosChannel)supabase.removeChannel(window.__lifeosChannel);
-    window.__lifeosChannel=supabase.channel('lifeos-workspace-sync')
-      .on('postgres_changes',{event:'UPDATE',schema:'public',table:'lifeos_workspace',filter:'user_id=eq.'+cloudUser.id},payload=>{
-        if(!cloudReady||!payload.new?.data)return;
-        try{applyRemoteRow(payload.new)}catch(e){console.error(e)}
-      }).subscribe();
-  }catch(e){
-    cloudReady=false;console.error('LifeOS cloud activation failed:',e);
-    $('#accountStatus').textContent='Offline';$('#connectCloudBtn').hidden=false;
-    // Keep sign-out available even when activation fails; it never clears local data.
-    $('#signOutBtn').hidden=!cloudUser;
-    const detail=String(e?.message||e||'Unknown activation error');
-    setSync('Cloud activation failed: '+detail);
-    $('#authGate').style.display=initialLocalCachePresent||offlineModeChosen?'none':'flex';
-    $('#authMessage').textContent='Cloud activation failed: '+detail;
-  }finally{activating=false}
+ if(!supabase||!session?.user)return;const user=session.user;if(cloudUser?.id===user.id&&(cloudReady||activating))return;
+ activating=true;cloudReady=false;cloudUser=user;$('#authGate').style.display='flex';$('#authMessage').textContent='Loading your cloud workspace…';
+ try{const remote=await fetchRemote();if(cloudUser?.id!==user.id)return;
+  if(remote){s=normalizeWorkspace(remote.data.workspace||{});prefs=mergePrefs(defaultPrefs(),remote.data.preferences);baseRevision=Number(remote.revision)||0;baseStamp=remote.updated_at||null;baseSnapshot=currentSnapshot();lastCloudPayload=JSON.stringify(baseSnapshot);dirty=false}
+  else{s=seed();prefs=defaultPrefs();baseRevision=0;baseStamp=null;baseSnapshot={workspace:seed(),preferences:defaultPrefs()};lastCloudPayload=JSON.stringify(baseSnapshot);dirty=true}
+  lastLocalSnapshot=currentSnapshot();window.__lifeosCloudLoaded=true;cloudReady=true;$('#accountStatus').textContent='Connected';$('#accountEmail').textContent=user.email||'Signed in with Google';$('#connectCloudBtn').hidden=true;$('#signOutBtn').hidden=false;gate.style.display='none';setSync(remote?'Loaded your cloud workspace.':'Creating your cloud workspace…');setup();if(dirty)await pushCloud();
+  if(window.__lifeosChannel)supabase.removeChannel(window.__lifeosChannel);window.__lifeosChannel=supabase.channel('lifeos-workspace-sync').on('postgres_changes',{event:'UPDATE',schema:'public',table:'lifeos_workspace',filter:'user_id=eq.'+user.id},payload=>{if(cloudReady&&payload.new?.data)applyRemoteRow(payload.new)}).subscribe();
+ }catch(error){cloudReady=false;console.error('LifeOS cloud activation failed:',error);gate.style.display='flex';$('#accountStatus').textContent='Connection required';$('#connectCloudBtn').hidden=false;$('#signOutBtn').hidden=false;const detail=String(error?.message||error||'Unknown cloud activation error');setSync('Cloud activation failed: '+detail);$('#authMessage').textContent='Could not load your cloud workspace: '+detail+'. No cloud data was changed.'}
+ finally{activating=false}
 }
 /* ===== end rewritten block ===== */
 
@@ -502,7 +219,10 @@ function nav(p){if(!$(`#page-${p}`))return;queryAll('.page').forEach(x=>x.classL
 function renderPage(p){({home:home,tasks:tasksPage,habits:habitsPage,study:studyPage,focus:focusPage,notes:notesPage,finance:financePage,library:libraryPage,projects:projectsPage,calendar:calendarPage,settings:settingsPage})[p]?.()}
 const taskPageUI=window.LifeOSTaskPage.create({$, getState:()=>s, getTaskView:()=>taskView, safe, wire});
 function taskRow(task,full=false){return taskPageUI.taskRow(task,full)}
-const studyPageUI=window.LifeOSStudyPage.create({$, queryAll, getState:()=>s, safe, examDaysLeft, formatMinutes:mins, studyWeekMins, studyTodayMins, studyTargetMins, studyProgressText, formatHoursMinutes:hm, save, render, toast, sessionDateLabel});
+const studyPageUI=window.LifeOSStudyPage.create({$, queryAll, getState:()=>s, getPrefs:()=>prefs, safe, examDaysLeft, formatMinutes:mins, studyWeekMins, studyTodayMins, studyTargetMins, studyProgressText, formatHoursMinutes:hm, save, render, toast, sessionDateLabel});
+function studyPage(){return studyPageUI.studyPage()}
+function sessionRow(x){return studyPageUI.sessionRow(x)}
+function wireSessions(){return studyPageUI.wireSessions()}
 function subjectNames(){return studyPageUI.subjectNames()}
 function subjectOptions(selected=''){return studyPageUI.subjectOptions(selected)}
 function refreshSubjectControls(){return studyPageUI.refreshSubjectControls()}
@@ -554,15 +274,19 @@ function timerPause(){return focusTimer.timerPause()}
 function timerReset(){return focusTimer.timerReset()}
 function timerFinish(){return focusTimer.timerFinish()}
 
-const entryModalUI=window.LifeOSEntryModal.create({$,queryAll,getState:()=>s,safe,dayKey,addDays,dayRe,toast,newRecordId,transactionDate,subjectOptions,habitHistory,showModal,closeModal,save,render,bindModalClose});
+const entryModalUI=window.LifeOSEntryModal.create({$,queryAll,getState:()=>s,safe,dayKey,addDays,dayRe,toast,newRecordId,transactionDate,subjectOptions,refreshSubjectControls,habitHistory,showModal,closeModal,save,render,bindModalClose});
 function modal(type,item=null){return entryModalUI.modal(type,item)}
 
 function settingsPage(){applyPrefs()}
+async function resetWorkspaceSafely(){const old=JSON.parse(JSON.stringify(s));s=seed();dirty=true;save();render();const ok=await pushCloud();if(!ok||dirty){s=old;dirty=false;lastLocalSnapshot=currentSnapshot();render();toast('Reset was not confirmed by the cloud. Your workspace remains loaded.');return}render();nav('home');toast('Workspace reset and saved online. Preferences were kept.')}
+function reset(){inPageConfirm('Reset workspace','This permanently clears your LifeOS workspace in the cloud and on all synced devices. Continue?',()=>inPageConfirm('Final confirmation','Delete tasks, notes, goals, study records, finance records and all other workspace data?',()=>resetWorkspaceSafely(),true),true)}
+function resetPreferences(){inPageConfirm('Reset preferences','Reset appearance, profile and planning preferences? Workspace records will remain unchanged.',()=>{prefs=defaultPrefs();dirty=true;save();applyPrefs();render();toast('Preferences reset. Your records are unchanged.')})}
+async function compressImage(file){if(!file||!file.type||!file.type.startsWith('image/'))throw Error('Choose an image file.');if(file.size>20*1024*1024)throw Error('Choose an image smaller than 20 MB.');let bitmap;try{if('createImageBitmap'in window)bitmap=await createImageBitmap(file)}catch(e){}const canvas=document.createElement('canvas'),side=256;canvas.width=side;canvas.height=side;const ctx=canvas.getContext('2d');if(!ctx)throw Error('Image processing is not available.');if(bitmap){const scale=Math.max(side/bitmap.width,side/bitmap.height),w=bitmap.width*scale,h=bitmap.height*scale;ctx.drawImage(bitmap,(side-w)/2,(side-h)/2,w,h);bitmap.close?.()}else{const url=URL.createObjectURL(file);try{const img=await new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=()=>reject(Error('This image could not be opened.'));im.src=url});const scale=Math.max(side/img.naturalWidth,side/img.naturalHeight),w=img.naturalWidth*scale,h=img.naturalHeight*scale;ctx.drawImage(img,(side-w)/2,(side-h)/2,w,h)}finally{URL.revokeObjectURL(url)}}const data=canvas.toDataURL('image/jpeg',0.72);if(data.length>300000)throw Error('Could not compress this picture enough.');return data}
 function render(){if(rollover())save();refreshSubjectControls();home();tasksPage();habitsPage();studyPage();focusPage();notesPage();financePage();libraryPage();projectsPage();calendarPage();timerRender()}
 const searchUI=window.LifeOSSearchUI.create({$, queryAll, getState:()=>s, safe, nav, closeSearchModal, setSearchReturnFocus:target=>modalUI.setSearchReturnFocus(target)});
 function search(){return searchUI.search()}
 
-const backupUI=window.LifeOSBackupUI.create({getState:()=>s,getPrefs:()=>prefs,setPrefs:value=>{prefs=value},normalizeWorkspace,mergeWorkspace,mergePrefs,safe,toast,confirm:inPageConfirm,save,applyPrefs,render,nav,pushCloud,restorePrevious:(workspace,preferences,markDirty)=>{s=workspace;prefs=preferences;if(markDirty){dirty=true;writeMeta({user:cloudUser?.id,revision:baseRevision,dirty:true})}writeCache()}});
+const backupUI=window.LifeOSBackupUI.create({getState:()=>s,getPrefs:()=>prefs,setPrefs:value=>{prefs=value},normalizeWorkspace,mergeWorkspace,mergePrefs,safe,toast,confirm:inPageConfirm,save,applyPrefs,render,nav,pushCloud,restorePrevious:(workspace,preferences)=>{s=workspace;prefs=preferences;dirty=false;lastLocalSnapshot=currentSnapshot();baseSnapshot=currentSnapshot();lastCloudPayload=JSON.stringify(baseSnapshot)}});
 function exportData(){return backupUI.exportData()}
 function backupPreview(file){return backupUI.backupPreview(file)}
 function restoreBackup(mode){return backupUI.restoreBackup(mode)}
@@ -580,10 +304,9 @@ function updateLifeOSGreeting(){profileUI.updateLifeOSGreeting()}
 function setup(){
   if(setupComplete){applyPrefs();render();return}
   setupComplete=true;
-  updateLifeOSGreeting();if(!window.__lifeosCloudLoaded)load();s.exams=s.exams||[];s.subjects=s.subjects||[];[...s.syllabus.map(x=>x.subject),...s.sessions.map(x=>x.subject)].filter(Boolean).forEach(x=>{if(!s.subjects.includes(x))s.subjects.push(x)});s.investments=s.investments||[];s.assets=s.assets||[];s.liabilities=s.liabilities||[];let es=$('#examSelect');s.exams.forEach(e=>{if(![...es.options].some(o=>o.value===e.name)){let o=document.createElement('option');o.value=e.name;o.textContent=e.name;es.append(o)}});updateDateLabels();queryAll('[data-page]').forEach(b=>b.onclick=()=>nav(b.dataset.page));queryAll('[data-go]').forEach(b=>b.onclick=()=>nav(b.dataset.go));queryAll('[data-add]').forEach(b=>b.onclick=()=>modal(b.dataset.add));$('#quickAdd').onclick=()=>modal('quick');$('#searchBtn').onclick=search;$('#themeBtn').onclick=toggleTheme;$('#collapse').onclick=toggleSidebar;$('#settingsSidebar').onclick=toggleSidebar;$('#prefTheme').onchange=()=>{prefs.theme=$('#prefTheme').value;save();applyPrefs()};$('#prefDensity').onchange=()=>{prefs.density=$('#prefDensity').value;save();applyPrefs()};$('#prefFont').onchange=()=>{prefs.font=$('#prefFont').value;save();applyPrefs()};$('#prefAccent').onchange=()=>{prefs.accent=$('#prefAccent').value;save();applyPrefs();toast('Accent colour updated.')};prefs.weekStart=1;$('#prefClock').onchange=()=>{prefs.clock=$('#prefClock').value;save();updateDateLabels();toast('Clock format updated.')};$('#prefDate').onchange=()=>{prefs.dateFormat=$('#prefDate').value;save();updateDateLabels();render();toast('Date format updated.')};$('#prefBudgetResetDay').onchange=()=>{prefs.budgetResetDay=Number($('#prefBudgetResetDay').value)||1;financeMonth=null;save();render();toast('Income and budget cycle updated.')};$('#saveProfilePage').onclick=saveProfile;$('#profileRemovePicture').onclick=()=>{prefs.picture='';save();applyPrefs();toast('Profile picture removed.')};$('#profilePictureInput').onchange=async e=>{let f=e.target.files?.[0];if(!f)return;try{prefs.picture=await compressImage(f);prefs.avatar='';save();applyPrefs();toast('Profile picture saved.')}catch(err){toast(err.message||'Could not save that picture.')}e.target.value=''};$('#profileAvatarChoices').onclick=e=>{let b=e.target.closest('[data-profile-avatar]');if(!b)return;prefs.avatar=b.dataset.profileAvatar;prefs.picture='';save();applyPrefs();toast('Avatar updated.')};$('#summaryTasks').onchange=()=>{prefs.summaries.tasks=$('#summaryTasks').checked;save();applyPrefs()};$('#summaryStudy').onchange=()=>{prefs.summaries.study=$('#summaryStudy').checked;save();applyPrefs()};$('#summaryHabits').onchange=()=>{prefs.summaries.habits=$('#summaryHabits').checked;save();applyPrefs()};if($('#resetPrefsBtn'))$('#resetPrefsBtn').onclick=resetPreferences;$('#moreBtn').onclick=()=>$('#moreMenu').classList.toggle('open');$('#taskViews').onclick=e=>{let b=e.target.closest('[data-view]');if(!b)return;taskView=b.dataset.view;queryAll('[data-view]').forEach(x=>x.classList.toggle('active',x===b));tasksPage()};$('#taskSearch').oninput=tasksPage;$('#taskPriority').onchange=tasksPage;$('#noteSearch').oninput=notesPage;$('#librarySearch').oninput=libraryPage;$('#libraryStatus').onchange=libraryPage;$('#libraryType').onchange=libraryPage;$('#libraryLayout').onclick=e=>{let b=e.target.closest('[data-layout]');if(!b)return;bookView=b.dataset.layout;queryAll('[data-layout]').forEach(x=>x.classList.toggle('active',x===b));libraryPage()};$('#miniStart').onclick=timerStart;$('#miniStop').onclick=timerPause;$('#miniFinish').onclick=timerFinish;$('#startTimer').onclick=timerStart;$('#pauseTimer').onclick=timerPause;$('#finishTimer').onclick=timerFinish;$('#resetTimer').onclick=timerReset;$('#timerModes').onclick=e=>{let b=e.target.closest('[data-mode]');if(!b)return;if(s.timer.running){toast('Pause or finish the session first.');return}s.timer.mode=b.dataset.mode;s.timer.duration=b.dataset.mode==='countdown'?1500:0;s.timer.remaining=s.timer.duration;s.timer.paused=false;queryAll('[data-mode]').forEach(x=>x.classList.toggle('active',x===b));$('#presets').style.display=b.dataset.mode==='countdown'?'flex':'none';save();timerRender()};$('#presetButtons').onclick=e=>{let b=e.target.closest('[data-min]');if(!b||s.timer.running)return;s.timer.duration=+b.dataset.min*60;s.timer.remaining=s.timer.duration;queryAll('[data-min]').forEach(x=>x.classList.toggle('active',x===b));save();timerRender()};$('#customTimer').onclick=()=>{inPagePrompt('Custom timer','Countdown minutes (1–240):','30',(val)=>{let n=Number(val);if(Number.isInteger(n)&&n>=1&&n<=240&&!s.timer.running){s.timer.duration=n*60;s.timer.remaining=n*60;save();timerRender();}else{toast('Enter a whole number between 1 and 240.');}},'number');};$('#timerTopic').oninput=timerRender;$('#timerSubject').onchange=timerRender;$('#addRoutine').onclick=()=>modal('routine');$('#addTopic').onclick=()=>modal('topic');$('#manageSubjects').onclick=()=>{inPagePrompt('Add subject','Add a subject name:','',(val)=>{let name=val?.trim();if(!name)return;if(!(s.subjects||[]).includes(name))s.subjects.push(name);save();refreshSubjectControls();toast('Subject added. It is available in Exams and Focus Timer.');});};$('#addExam').onclick=()=>{inPagePrompt('New exam workspace','Name this exam workspace:','',(val)=>{let n=val?.trim();if(n&&!s.exams.some(e=>e.name===n)){let first=!s.exams.length;s.exams.push({name:n,date:''});if(first)adoptOrphans(n);refreshSubjectControls();$('#examSelect').value=n;save();studyPage();}});};
+  updateLifeOSGreeting();if(!window.__lifeosCloudLoaded)return;s.exams=s.exams||[];s.subjects=s.subjects||[];[...s.syllabus.map(x=>x.subject),...s.sessions.map(x=>x.subject)].filter(Boolean).forEach(x=>{if(!s.subjects.includes(x))s.subjects.push(x)});s.investments=s.investments||[];s.assets=s.assets||[];s.liabilities=s.liabilities||[];let es=$('#examSelect');s.exams.forEach(e=>{if(![...es.options].some(o=>o.value===e.name)){let o=document.createElement('option');o.value=e.name;o.textContent=e.name;es.append(o)}});updateDateLabels();queryAll('[data-page]').forEach(b=>b.onclick=()=>nav(b.dataset.page));queryAll('[data-go]').forEach(b=>b.onclick=()=>nav(b.dataset.go));queryAll('[data-add]').forEach(b=>b.onclick=()=>modal(b.dataset.add));$('#quickAdd').onclick=()=>modal('quick');$('#searchBtn').onclick=search;$('#themeBtn').onclick=toggleTheme;$('#collapse').onclick=toggleSidebar;$('#settingsSidebar').onclick=toggleSidebar;$('#prefTheme').onchange=()=>{prefs.theme=$('#prefTheme').value;save();applyPrefs()};$('#prefDensity').onchange=()=>{prefs.density=$('#prefDensity').value;save();applyPrefs()};$('#prefFont').onchange=()=>{prefs.font=$('#prefFont').value;save();applyPrefs()};$('#prefAccent').onchange=()=>{prefs.accent=$('#prefAccent').value;save();applyPrefs();toast('Accent colour updated.')};prefs.weekStart=1;$('#prefClock').onchange=()=>{prefs.clock=$('#prefClock').value;save();updateDateLabels();toast('Clock format updated.')};$('#prefDate').onchange=()=>{prefs.dateFormat=$('#prefDate').value;save();updateDateLabels();render();toast('Date format updated.')};$('#prefBudgetResetDay').onchange=()=>{prefs.budgetResetDay=Number($('#prefBudgetResetDay').value)||1;financeMonth=null;save();render();toast('Income and budget cycle updated.')};$('#saveProfilePage').onclick=saveProfile;$('#profileRemovePicture').onclick=()=>{prefs.picture='';save();applyPrefs();toast('Profile picture removed.')};$('#profilePictureInput').onchange=async e=>{let f=e.target.files?.[0];if(!f)return;try{prefs.picture=await compressImage(f);prefs.avatar='';save();applyPrefs();toast('Profile picture saved.')}catch(err){toast(err.message||'Could not save that picture.')}e.target.value=''};$('#profileAvatarChoices').onclick=e=>{let b=e.target.closest('[data-profile-avatar]');if(!b)return;prefs.avatar=b.dataset.profileAvatar;prefs.picture='';save();applyPrefs();toast('Avatar updated.')};$('#summaryTasks').onchange=()=>{prefs.summaries.tasks=$('#summaryTasks').checked;save();applyPrefs()};$('#summaryStudy').onchange=()=>{prefs.summaries.study=$('#summaryStudy').checked;save();applyPrefs()};$('#summaryHabits').onchange=()=>{prefs.summaries.habits=$('#summaryHabits').checked;save();applyPrefs()};if($('#resetPrefsBtn'))$('#resetPrefsBtn').onclick=resetPreferences;$('#moreBtn').onclick=()=>$('#moreMenu').classList.toggle('open');$('#taskViews').onclick=e=>{let b=e.target.closest('[data-view]');if(!b)return;taskView=b.dataset.view;queryAll('[data-view]').forEach(x=>x.classList.toggle('active',x===b));tasksPage()};$('#taskSearch').oninput=tasksPage;$('#taskPriority').onchange=tasksPage;$('#noteSearch').oninput=notesPage;$('#librarySearch').oninput=libraryPage;$('#libraryStatus').onchange=libraryPage;$('#libraryType').onchange=libraryPage;$('#libraryLayout').onclick=e=>{let b=e.target.closest('[data-layout]');if(!b)return;bookView=b.dataset.layout;queryAll('[data-layout]').forEach(x=>x.classList.toggle('active',x===b));libraryPage()};$('#miniStart').onclick=timerStart;$('#miniStop').onclick=timerPause;$('#miniFinish').onclick=timerFinish;$('#startTimer').onclick=timerStart;$('#pauseTimer').onclick=timerPause;$('#finishTimer').onclick=timerFinish;$('#resetTimer').onclick=timerReset;$('#timerModes').onclick=e=>{let b=e.target.closest('[data-mode]');if(!b)return;if(s.timer.running){toast('Pause or finish the session first.');return}s.timer.mode=b.dataset.mode;s.timer.duration=b.dataset.mode==='countdown'?1500:0;s.timer.remaining=s.timer.duration;s.timer.paused=false;queryAll('[data-mode]').forEach(x=>x.classList.toggle('active',x===b));$('#presets').style.display=b.dataset.mode==='countdown'?'flex':'none';save();timerRender()};$('#presetButtons').onclick=e=>{let b=e.target.closest('[data-min]');if(!b||s.timer.running)return;s.timer.duration=+b.dataset.min*60;s.timer.remaining=s.timer.duration;queryAll('[data-min]').forEach(x=>x.classList.toggle('active',x===b));save();timerRender()};$('#customTimer').onclick=()=>{inPagePrompt('Custom timer','Countdown minutes (1–240):','30',(val)=>{let n=Number(val);if(Number.isInteger(n)&&n>=1&&n<=240&&!s.timer.running){s.timer.duration=n*60;s.timer.remaining=n*60;save();timerRender();}else{toast('Enter a whole number between 1 and 240.');}},'number');};$('#timerTopic').oninput=timerRender;$('#timerSubject').onchange=timerRender;$('#addRoutine').onclick=()=>modal('routine');$('#addTopic').onclick=()=>modal('topic');$('#manageSubjects').onclick=()=>{inPagePrompt('Add subject','Add a subject name:','',(val)=>{let name=val?.trim();if(!name)return;if(!(s.subjects||[]).includes(name))s.subjects.push(name);save();refreshSubjectControls();toast('Subject added. It is available in Exams and Focus Timer.');});};$('#addExam').onclick=()=>{inPagePrompt('New exam workspace','Name this exam workspace:','',(val)=>{let n=val?.trim();if(n&&!s.exams.some(e=>e.name===n)){let first=!s.exams.length;s.exams.push({name:n,date:''});if(first)adoptOrphans(n);refreshSubjectControls();$('#examSelect').value=n;save();studyPage();}});};
 $('#editExam').onclick=()=>{let n=$('#examSelect').value,ex=s.exams.find(e=>e.name===n);if(!ex)return;inPagePrompt('Set exam date','Exam date (YYYY-MM-DD). Leave empty to clear:',ex.date||'',(val)=>{let v=val?.trim()||'';if(v&&!(dayRe.test(v)&&dayKey(new Date(v+'T12:00:00'))===v)){toast('Use the format YYYY-MM-DD, for example 2026-12-15.');return;}ex.date=v;save();studyPage();toast(v?'Exam date saved.':'Exam date cleared.');});};
-$('#deleteExam').onclick=()=>{let n=$('#examSelect').value;if(!n)return;let topics=s.syllabus.filter(t=>t.exam===n).length;inPageConfirm('Delete exam',`Delete exam “${n}”? Its ${topics} syllabus topic(s) will be removed. Study sessions stay in your Focus history.`,()=>{s.exams=s.exams.filter(e=>e.name!==n);s.syllabus=s.syllabus.filter(t=>t.exam!==n);s.sessions.forEach(x=>{if(x.exam===n)x.exam=''});save();refreshSubjectControls();$('#examSelect').value='';studyPage();toast('Exam deleted.');},true);};$('#examSelect').onchange=studyPage;$('#prevWeek').onclick=()=>{weekOffset--;calendarPage()};$('#nextWeek').onclick=()=>{weekOffset++;calendarPage()};$('#thisWeek').onclick=()=>{weekOffset=0;calendarPage()};$('#resetBtn').onclick=reset;bindGlobalsOnce();bindModalClose();try{if(!localStorage.getItem('lifeos-review-prefs')&&localStorage.getItem('lifeos-review-theme')==='light')prefs.theme='light'}catch(e){}applyPrefs();render();save()}
+$('#deleteExam').onclick=()=>{let n=$('#examSelect').value;if(!n)return;let topics=s.syllabus.filter(t=>t.exam===n).length;inPageConfirm('Delete exam',`Delete exam “${n}”? Its ${topics} syllabus topic(s) will be removed. Study sessions stay in your Focus history.`,()=>{s.exams=s.exams.filter(e=>e.name!==n);s.syllabus=s.syllabus.filter(t=>t.exam!==n);s.sessions.forEach(x=>{if(x.exam===n)x.exam=''});save();refreshSubjectControls();$('#examSelect').value='';studyPage();toast('Exam deleted.');},true);};$('#examSelect').onchange=studyPage;$('#prevWeek').onclick=()=>{weekOffset--;calendarPage()};$('#nextWeek').onclick=()=>{weekOffset++;calendarPage()};$('#thisWeek').onclick=()=>{weekOffset=0;calendarPage()};$('#resetBtn').onclick=reset;bindGlobalsOnce();bindModalClose();applyPrefs();render();save()}
 if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(error=>console.warn('LifeOS offline shell could not be installed.',error));
 startCloud();
-setup();
 })();
