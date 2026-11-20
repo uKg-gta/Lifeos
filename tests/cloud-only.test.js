@@ -21,7 +21,9 @@ test('workspace state is not read from or written to browser local storage',()=>
 test('sign-in loads the authenticated cloud workspace before setup',()=>{
   assert.match(app,/const remote=await fetchRemote\(\)/);
   assert.match(app,/window\.__lifeosCloudLoaded=true;cloudReady=true/);
-  assert.match(app,/setSync\(remote\?'Loaded your cloud workspace\.'/);
+  assert.match(app,/const remote=await fetchRemote\(\)/);
+  assert.match(app,/migration\.read\(user\.id\)/);
+  assert.match(app,/setup\(\);if\(dirty\)await pushCloud\(\)/);
 });
 test('offline continuation is not offered',()=>{
   assert.doesNotMatch(html,/id="continueOffline"/);
