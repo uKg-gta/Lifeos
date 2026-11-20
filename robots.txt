@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://ukg-gta.github.io/Lifeos/sitemap.xml
