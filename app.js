@@ -143,6 +143,7 @@ async function activateSession(session){
   const cloudSnapshot=remote?{workspace:normalizeWorkspace(remote.data.workspace||{}),preferences:mergePrefs(defaultPrefs(),remote.data.preferences)}:{workspace:seed(),preferences:defaultPrefs()};
   const migration=window.LifeOSLegacyMigration.create(),legacy=migration.read(user.id);
   let selected=cloudSnapshot;
+  if(preserveMemory)selected=window.LifeOSSyncCore.mergeSnapshots(previousBase,memorySnapshot,selected,{localFallbackTime:logicalNow(),remoteFallbackTime:stampMs(remote?.updated_at)});
   for(const item of legacy){
     const localSnapshot={workspace:normalizeWorkspace(item.workspace),preferences:mergePrefs(defaultPrefs(),item.preferences)};
     const base=item.base?.workspace?{workspace:normalizeWorkspace(item.base.workspace),preferences:mergePrefs(defaultPrefs(),item.base.preferences)}:{workspace:seed(),preferences:defaultPrefs()};
