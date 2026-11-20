@@ -306,6 +306,74 @@ const entryModalUI=window.LifeOSEntryModal.create({$,queryAll,getState:()=>s,saf
 function modal(type,item=null){return entryModalUI.modal(type,item)}
 
 function settingsPage(){applyPrefs()}
+const pushCategories=['tasks','study','habits','exams'];
+function pushKeyBytes(value){
+ const padding='='.repeat((4-value.length%4)%4),base=value.replace(/-/g,'+').replace(/_/g,'/')+padding;
+ const raw=atob(base);return Uint8Array.from(raw,c=>c.charCodeAt(0));
+}
+function pushStatus(message,enabled=false){const el=$('#pushStatus');if(el)el.textContent=message;const help=$('#pushHelp');if(help&&enabled)help.textContent='This device is registered. Reminders follow your selected categories and quiet hours.'}
+function readPushPrefs(){
+ const categories={};pushCategories.forEach(k=>categories[k]=$('#push'+k[0].toUpperCase()+k.slice(1))?.checked!==false);
+ return {categories,quiet_start:$('#pushQuietStart')?.value||'22:00',quiet_end:$('#pushQuietEnd')?.value||'07:00',timezone:Intl.DateTimeFormat().resolvedOptions().timeZone||'Asia/Kolkata'};
+}
+async function loadPushPrefs(){
+ if(!supabase||!cloudUser)return;
+ try{
+  const {data,error}=await supabase.from('lifeos_push_preferences').select('*').eq('user_id',cloudUser.id).maybeSingle();
+  if(error)throw error;
+  if(data){
+   pushCategories.forEach(k=>{const el=$('#push'+k[0].toUpperCase()+k.slice(1));if(el)el.checked=data.categories?.[k]!==false});
+   $('#pushQuietStart').value=String(data.quiet_start||'22:00').slice(0,5);$('#pushQuietEnd').value=String(data.quiet_end||'07:00').slice(0,5);
+   pushStatus(data.enabled?'Preferences saved':'Not enabled');
+  }
+  const {data:subs,error:subError}=await supabase.from('lifeos_push_subscriptions').select('id').eq('user_id',cloudUser.id).limit(1);
+  if(subError)throw subError;
+  if(subs?.length)pushStatus(data?.enabled?'Enabled on this device':'Device registered · paused');
+ }catch(error){console.warn('Could not load push preferences:',error)}
+}
+async function savePushPreferences(enabled=null){
+ if(!supabase||!cloudUser){toast('Sign in to save notification preferences.');return false}
+ const prefs=readPushPrefs();
+ const {error}=await supabase.from('lifeos_push_preferences').upsert({user_id:cloudUser.id,enabled:enabled===null?undefined:enabled,categories:prefs.categories,quiet_start:prefs.quiet_start,quiet_end:prefs.quiet_end,timezone:prefs.timezone,updated_at:new Date().toISOString()},{onConflict:'user_id'});
+ if(error){toast('Could not save notification preferences: '+error.message);return false}
+ return true;
+}
+async function enablePush(){
+ const button=$('#enablePushBtn');if(button)button.disabled=true;
+ try{
+  if(!cloudReady||!cloudUser||!supabase)throw Error('Sign in to LifeOS first.');
+  if(!('serviceWorker'in navigator)||!('PushManager'in window)||!('Notification'in window))throw Error('Push notifications are not supported by this browser.');
+  if(!window.isSecureContext)throw Error('Push notifications require a secure HTTPS connection.');
+  const permission=await Notification.requestPermission();if(permission!=='granted')throw Error('Notification permission was not granted. Enable it in your browser settings and retry.');
+  const {data:config,error:configError}=await supabase.functions.invoke('push-config');
+  if(configError)throw configError;if(!config?.ready||!config.publicKey)throw Error('Push delivery is not configured on the LifeOS server yet. The server VAPID keys and scheduler must be set up first.');
+  const registration=await navigator.serviceWorker.ready;
+  let subscription=await registration.pushManager.getSubscription();
+  if(!subscription)subscription=await registration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:pushKeyBytes(config.publicKey)});
+  const json=subscription.toJSON(),keys=json.keys||{};
+  if(!json.endpoint||!keys.p256dh||!keys.auth)throw Error('The browser returned an incomplete push subscription.');
+  const {error}=await supabase.from('lifeos_push_subscriptions').upsert({user_id:cloudUser.id,endpoint:json.endpoint,p256dh:keys.p256dh,auth:keys.auth,last_seen_at:new Date().toISOString()},{onConflict:'endpoint'});
+  if(error)throw error;
+  if(!await savePushPreferences(true))throw Error('The device is registered, but preferences could not be saved.');
+  pushStatus('Enabled on this device',true);toast('Push notifications enabled on this device.');
+ }catch(error){console.error('LifeOS push setup failed:',error);toast(error?.message||'Could not enable push notifications.');}
+ finally{if(button)button.disabled=false}
+}
+async function disablePush(){
+ try{
+  if(!supabase||!cloudUser)throw Error('Sign in to LifeOS first.');
+  const registration=await navigator.serviceWorker.ready,subscription=await registration.pushManager.getSubscription();
+  if(subscription){
+   const endpoint=subscription.endpoint;
+   await subscription.unsubscribe();
+   const {error}=await supabase.from('lifeos_push_subscriptions').delete().eq('user_id',cloudUser.id).eq('endpoint',endpoint);
+   if(error)throw error;
+  }
+  if(!await savePushPreferences(false))return;
+  pushStatus('Turned off');toast('Push notifications turned off for this device.');
+ }catch(error){toast(error?.message||'Could not turn off push notifications.')}
+}
+
 async function resetWorkspaceSafely(){const old=JSON.parse(JSON.stringify(s));s=seed();dirty=true;save();render();const ok=await pushCloud();if(!ok||dirty){s=old;dirty=false;lastLocalSnapshot=currentSnapshot();render();toast('Reset was not confirmed by the cloud. Your workspace remains loaded.');return}render();nav('home');toast('Workspace reset and saved online. Preferences were kept.')}
 function reset(){inPageConfirm('Reset workspace','This permanently clears your LifeOS workspace in the cloud and on all synced devices. Continue?',()=>inPageConfirm('Final confirmation','Delete tasks, notes, goals, study records, finance records and all other workspace data?',()=>resetWorkspaceSafely(),true),true)}
 function resetPreferences(){inPageConfirm('Reset preferences','Reset appearance, profile and planning preferences? Workspace records will remain unchanged.',()=>{prefs=defaultPrefs();dirty=true;save();applyPrefs();render();toast('Preferences reset. Your records are unchanged.')})}
@@ -334,7 +402,7 @@ function setup(){
   setupComplete=true;
   updateLifeOSGreeting();if(!window.__lifeosCloudLoaded)return;s.exams=s.exams||[];s.subjects=s.subjects||[];[...s.syllabus.map(x=>x.subject),...s.sessions.map(x=>x.subject)].filter(Boolean).forEach(x=>{if(!s.subjects.includes(x))s.subjects.push(x)});s.investments=s.investments||[];s.assets=s.assets||[];s.liabilities=s.liabilities||[];let es=$('#examSelect');s.exams.forEach(e=>{if(![...es.options].some(o=>o.value===e.name)){let o=document.createElement('option');o.value=e.name;o.textContent=e.name;es.append(o)}});updateDateLabels();queryAll('[data-page]').forEach(b=>b.onclick=()=>nav(b.dataset.page));queryAll('[data-go]').forEach(b=>b.onclick=()=>nav(b.dataset.go));queryAll('[data-add]').forEach(b=>b.onclick=()=>modal(b.dataset.add));$('#quickAdd').onclick=()=>modal('quick');$('#searchBtn').onclick=search;$('#themeBtn').onclick=toggleTheme;$('#collapse').onclick=toggleSidebar;$('#settingsSidebar').onclick=toggleSidebar;$('#prefTheme').onchange=()=>{prefs.theme=$('#prefTheme').value;save();applyPrefs()};$('#prefDensity').onchange=()=>{prefs.density=$('#prefDensity').value;save();applyPrefs()};$('#prefFont').onchange=()=>{prefs.font=$('#prefFont').value;save();applyPrefs()};$('#prefAccent').onchange=()=>{prefs.accent=$('#prefAccent').value;save();applyPrefs();toast('Accent colour updated.')};prefs.weekStart=1;$('#prefClock').onchange=()=>{prefs.clock=$('#prefClock').value;save();updateDateLabels();toast('Clock format updated.')};$('#prefDate').onchange=()=>{prefs.dateFormat=$('#prefDate').value;save();updateDateLabels();render();toast('Date format updated.')};$('#prefBudgetResetDay').onchange=()=>{prefs.budgetResetDay=Number($('#prefBudgetResetDay').value)||1;financeMonth=null;save();render();toast('Income and budget cycle updated.')};$('#saveProfilePage').onclick=saveProfile;$('#profileRemovePicture').onclick=()=>{prefs.picture='';save();applyPrefs();toast('Profile picture removed.')};$('#profilePictureInput').onchange=async e=>{let f=e.target.files?.[0];if(!f)return;try{prefs.picture=await compressImage(f);prefs.avatar='';save();applyPrefs();toast('Profile picture saved.')}catch(err){toast(err.message||'Could not save that picture.')}e.target.value=''};$('#profileAvatarChoices').onclick=e=>{let b=e.target.closest('[data-profile-avatar]');if(!b)return;prefs.avatar=b.dataset.profileAvatar;prefs.picture='';save();applyPrefs();toast('Avatar updated.')};$('#summaryTasks').onchange=()=>{prefs.summaries.tasks=$('#summaryTasks').checked;save();applyPrefs()};$('#summaryStudy').onchange=()=>{prefs.summaries.study=$('#summaryStudy').checked;save();applyPrefs()};$('#summaryHabits').onchange=()=>{prefs.summaries.habits=$('#summaryHabits').checked;save();applyPrefs()};if($('#resetPrefsBtn'))$('#resetPrefsBtn').onclick=resetPreferences;$('#moreBtn').onclick=()=>$('#moreMenu').classList.toggle('open');$('#taskViews').onclick=e=>{let b=e.target.closest('[data-view]');if(!b)return;taskView=b.dataset.view;queryAll('[data-view]').forEach(x=>x.classList.toggle('active',x===b));tasksPage()};$('#taskSearch').oninput=tasksPage;$('#taskPriority').onchange=tasksPage;$('#noteSearch').oninput=notesPage;$('#librarySearch').oninput=libraryPage;$('#libraryStatus').onchange=libraryPage;$('#libraryType').onchange=libraryPage;$('#libraryLayout').onclick=e=>{let b=e.target.closest('[data-layout]');if(!b)return;bookView=b.dataset.layout;queryAll('[data-layout]').forEach(x=>x.classList.toggle('active',x===b));libraryPage()};$('#miniStart').onclick=timerStart;$('#miniStop').onclick=timerPause;$('#miniFinish').onclick=timerFinish;$('#startTimer').onclick=timerStart;$('#pauseTimer').onclick=timerPause;$('#finishTimer').onclick=timerFinish;$('#resetTimer').onclick=timerReset;$('#timerModes').onclick=e=>{let b=e.target.closest('[data-mode]');if(!b)return;if(s.timer.running){toast('Pause or finish the session first.');return}s.timer.mode=b.dataset.mode;s.timer.duration=b.dataset.mode==='countdown'?1500:0;s.timer.remaining=s.timer.duration;s.timer.paused=false;queryAll('[data-mode]').forEach(x=>x.classList.toggle('active',x===b));$('#presets').style.display=b.dataset.mode==='countdown'?'flex':'none';save();timerRender()};$('#presetButtons').onclick=e=>{let b=e.target.closest('[data-min]');if(!b||s.timer.running)return;s.timer.duration=+b.dataset.min*60;s.timer.remaining=s.timer.duration;queryAll('[data-min]').forEach(x=>x.classList.toggle('active',x===b));save();timerRender()};$('#customTimer').onclick=()=>{inPagePrompt('Custom timer','Countdown minutes (1–240):','30',(val)=>{let n=Number(val);if(Number.isInteger(n)&&n>=1&&n<=240&&!s.timer.running){s.timer.duration=n*60;s.timer.remaining=n*60;save();timerRender();}else{toast('Enter a whole number between 1 and 240.');}},'number');};$('#timerTopic').oninput=timerRender;$('#timerSubject').onchange=timerRender;$('#addRoutine').onclick=()=>modal('routine');$('#addTopic').onclick=()=>modal('topic');$('#manageSubjects').onclick=()=>{inPagePrompt('Add subject','Add a subject name:','',(val)=>{let name=val?.trim();if(!name)return;if(!(s.subjects||[]).includes(name))s.subjects.push(name);save();refreshSubjectControls();toast('Subject added. It is available in Exams and Focus Timer.');});};$('#addExam').onclick=()=>{inPagePrompt('New exam workspace','Name this exam workspace:','',(val)=>{let n=val?.trim();if(n&&!s.exams.some(e=>e.name===n)){let first=!s.exams.length;s.exams.push({name:n,date:''});if(first)adoptOrphans(n);refreshSubjectControls();$('#examSelect').value=n;save();studyPage();}});};
 $('#editExam').onclick=()=>{let n=$('#examSelect').value,ex=s.exams.find(e=>e.name===n);if(!ex)return;inPagePrompt('Set exam date','Exam date (YYYY-MM-DD). Leave empty to clear:',ex.date||'',(val)=>{let v=val?.trim()||'';if(v&&!(dayRe.test(v)&&dayKey(new Date(v+'T12:00:00'))===v)){toast('Use the format YYYY-MM-DD, for example 2026-12-15.');return;}ex.date=v;save();studyPage();toast(v?'Exam date saved.':'Exam date cleared.');});};
-$('#deleteExam').onclick=()=>{let n=$('#examSelect').value;if(!n)return;let topics=s.syllabus.filter(t=>t.exam===n).length;inPageConfirm('Delete exam',`Delete exam “${n}”? Its ${topics} syllabus topic(s) will be removed. Study sessions stay in your Focus history.`,()=>{s.exams=s.exams.filter(e=>e.name!==n);s.syllabus=s.syllabus.filter(t=>t.exam!==n);s.sessions.forEach(x=>{if(x.exam===n)x.exam=''});save();refreshSubjectControls();$('#examSelect').value='';studyPage();toast('Exam deleted.');},true);};$('#examSelect').onchange=studyPage;$('#prevWeek').onclick=()=>{weekOffset--;calendarPage()};$('#nextWeek').onclick=()=>{weekOffset++;calendarPage()};$('#thisWeek').onclick=()=>{weekOffset=0;calendarPage()};$('#resetBtn').onclick=reset;bindGlobalsOnce();bindModalClose();applyPrefs();render();save()}
+$('#deleteExam').onclick=()=>{let n=$('#examSelect').value;if(!n)return;let topics=s.syllabus.filter(t=>t.exam===n).length;inPageConfirm('Delete exam',`Delete exam “${n}”? Its ${topics} syllabus topic(s) will be removed. Study sessions stay in your Focus history.`,()=>{s.exams=s.exams.filter(e=>e.name!==n);s.syllabus=s.syllabus.filter(t=>t.exam!==n);s.sessions.forEach(x=>{if(x.exam===n)x.exam=''});save();refreshSubjectControls();$('#examSelect').value='';studyPage();toast('Exam deleted.');},true);};$('#examSelect').onchange=studyPage;$('#prevWeek').onclick=()=>{weekOffset--;calendarPage()};$('#nextWeek').onclick=()=>{weekOffset++;calendarPage()};$('#thisWeek').onclick=()=>{weekOffset=0;calendarPage()};$('#resetBtn').onclick=reset;$('#enablePushBtn').onclick=enablePush;$('#disablePushBtn').onclick=disablePush;$('#savePushPrefsBtn').onclick=async()=>{if(await savePushPreferences())toast('Notification preferences saved.')};loadPushPrefs();bindGlobalsOnce();bindModalClose();applyPrefs();render();save()}
 if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(error=>console.warn('LifeOS offline shell could not be installed.',error));
 startCloud();
 })();
