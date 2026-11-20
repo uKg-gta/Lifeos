@@ -24,3 +24,5 @@ test('push settings cover all requested categories and device controls',()=>{
  assert.ok(app.includes("lifeos_push_subscriptions"));
  assert.ok(app.includes("lifeos_push_preferences"));
 });
+
+test('task and study reminders run at 8 AM, 3 PM and 10 PM with per-slot deduplication',()=>{ const d=fs.readFileSync(path.join(__dirname,'../supabase/functions/push-dispatch/index.ts'),'utf8'); assert.ok(d.includes('[8,15,22].includes(hour)')); assert.ok(d.includes(':task:${hour}:')); assert.ok(d.includes(':study:${hour}')); assert.ok(d.includes('studied<target')); });
