@@ -138,10 +138,30 @@ async function activateSession(session){
  const gate=$('#authGate');
  if(!supabase||!session?.user)return;const user=session.user;if(cloudUser?.id===user.id&&(cloudReady||activating))return;
  activating=true;cloudReady=false;cloudUser=user;$('#authGate').style.display='flex';$('#authMessage').textContent='Loading your cloud workspace…';
- try{const remote=await fetchRemote();if(cloudUser?.id!==user.id)return;
-  if(remote){s=normalizeWorkspace(remote.data.workspace||{});prefs=mergePrefs(defaultPrefs(),remote.data.preferences);baseRevision=Number(remote.revision)||0;baseStamp=remote.updated_at||null;baseSnapshot=currentSnapshot();lastCloudPayload=JSON.stringify(baseSnapshot);dirty=false}
-  else{s=seed();prefs=defaultPrefs();baseRevision=0;baseStamp=null;baseSnapshot={workspace:seed(),preferences:defaultPrefs()};lastCloudPayload=JSON.stringify(baseSnapshot);dirty=true}
-  lastLocalSnapshot=currentSnapshot();window.__lifeosCloudLoaded=true;cloudReady=true;$('#accountStatus').textContent='Connected';$('#accountEmail').textContent=user.email||'Signed in with Google';$('#connectCloudBtn').hidden=true;$('#signOutBtn').hidden=false;gate.style.display='none';setSync(remote?'Loaded your cloud workspace.':'Creating your cloud workspace…');setup();if(dirty)await pushCloud();
+ try{
+  const remote=await fetchRemote();if(cloudUser?.id!==user.id)return;
+  const cloudSnapshot=remote?{workspace:normalizeWorkspace(remote.data.workspace||{}),preferences:mergePrefs(defaultPrefs(),remote.data.preferences)}:{workspace:seed(),preferences:defaultPrefs()};
+  const migration=window.LifeOSLegacyMigration.create(),legacy=migration.read(user.id);
+  let selected=cloudSnapshot;
+  for(const item of legacy){
+    const localSnapshot={workspace:normalizeWorkspace(item.workspace),preferences:mergePrefs(defaultPrefs(),item.preferences)};
+    const base=item.base?.workspace?{workspace:normalizeWorkspace(item.base.workspace),preferences:mergePrefs(defaultPrefs(),item.base.preferences)}:{workspace:seed(),preferences:defaultPrefs()};
+    selected=window.LifeOSSyncCore.mergeSnapshots(base,localSnapshot,selected,{localFallbackTime:item.meta?.localUpdatedAt||Date.now(),remoteFallbackTime:stampMs(remote?.updated_at)});
+  }
+  s=normalizeWorkspace(selected.workspace);prefs=mergePrefs(defaultPrefs(),selected.preferences);
+  baseRevision=Number(remote?.revision)||0;baseStamp=remote?.updated_at||null;baseSnapshot=cloudSnapshot;lastCloudPayload=JSON.stringify(cloudSnapshot);
+  dirty=!remote||JSON.stringify(currentSnapshot())!==lastCloudPayload;lastLocalSnapshot=currentSnapshot();
+  window.__lifeosCloudLoaded=true;cloudReady=true;$('#accountStatus').textContent='Connected';$('#accountEmail').textContent=user.email||'Signed in with Google';$('#connectCloudBtn').hidden=true;$('#signOutBtn').hidden=false;gate.style.display='none';
+  setSync(legacy.length?'Recovering this account’s saved entries to the cloud…':remote?'Loaded your cloud workspace.':'Creating your cloud workspace…');setup();
+  let saved=true;if(dirty)saved=await pushCloud();
+  if(legacy.length&&saved&&!dirty){
+    const confirmed=await fetchRemote();
+    const confirmedSnapshot=confirmed?{workspace:normalizeWorkspace(confirmed.data.workspace||{}),preferences:mergePrefs(defaultPrefs(),confirmed.data.preferences)}:null;
+    if(confirmedSnapshot&&JSON.stringify(confirmedSnapshot)===JSON.stringify(currentSnapshot())){
+      migration.clear(user.id,legacy.map(item=>item.source));
+      setSync('Cloud workspace verified. Recovered local entries are now safely stored online.');
+    }else setSync('Cloud save needs verification. The old device copy has been preserved.');
+  }
   if(window.__lifeosChannel)supabase.removeChannel(window.__lifeosChannel);window.__lifeosChannel=supabase.channel('lifeos-workspace-sync').on('postgres_changes',{event:'UPDATE',schema:'public',table:'lifeos_workspace',filter:'user_id=eq.'+user.id},payload=>{if(cloudReady&&payload.new?.data)applyRemoteRow(payload.new)}).subscribe();
  }catch(error){cloudReady=false;console.error('LifeOS cloud activation failed:',error);gate.style.display='flex';$('#accountStatus').textContent='Connection required';$('#connectCloudBtn').hidden=false;$('#signOutBtn').hidden=false;const detail=String(error?.message||error||'Unknown cloud activation error');setSync('Cloud activation failed: '+detail);$('#authMessage').textContent='Could not load your cloud workspace: '+detail+'. No cloud data was changed.'}
  finally{activating=false}
