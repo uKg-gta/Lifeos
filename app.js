@@ -158,8 +158,8 @@ async function activateSession(session){
     const confirmed=await fetchRemote();
     const confirmedSnapshot=confirmed?{workspace:normalizeWorkspace(confirmed.data.workspace||{}),preferences:mergePrefs(defaultPrefs(),confirmed.data.preferences)}:null;
     if(confirmedSnapshot&&JSON.stringify(confirmedSnapshot)===JSON.stringify(currentSnapshot())){
-      migration.clear(user.id,legacy.map(item=>item.source));
-      setSync('Cloud workspace verified. Recovered local entries are now safely stored online.');
+      const cleared=migration.clear(user.id,legacy.map(item=>item.source));
+      setSync(cleared?'Cloud workspace verified. Recovered local entries are now safely stored online.':'Cloud workspace verified. Browser storage could not be cleared; the old copy remains inactive.');
     }else setSync('Cloud save needs verification. The old device copy has been preserved.');
   }
   if(window.__lifeosChannel)supabase.removeChannel(window.__lifeosChannel);window.__lifeosChannel=supabase.channel('lifeos-workspace-sync').on('postgres_changes',{event:'UPDATE',schema:'public',table:'lifeos_workspace',filter:'user_id=eq.'+user.id},payload=>{if(cloudReady&&payload.new?.data)applyRemoteRow(payload.new)}).subscribe();
