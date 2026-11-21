@@ -111,6 +111,6 @@ test('muted accent palette and default are applied consistently', () => {
     const rule = rulesFor('[data-accent="' + key + '"]')[0] || '';
     assert.match(rule, new RegExp('--accent:\\s*' + color));
   }
-  assert.match(css, /--accent:\\s*#B89A62/);
+  assert.match(css, /--accent:\s*#B89A62/);
   assert.match(html, /value="gold" selected>Antique Gold/);
 });
