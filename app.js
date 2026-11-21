@@ -130,7 +130,7 @@ async function startCloud(){
  const gate=$('#authGate'),msg=$('#authMessage');
  $('#signOutBtn').onclick=signOutFromLifeOS;
  $('#startupRetry').onclick=()=>location.reload();
- const startupTimeout=setTimeout(()=>showStartupError('This is taking longer than expected. Your saved entries are safe. Tap Try Again to retry.'),10000);
+ const startupTimeout=setTimeout(()=>{const splash=$('#startupSplash');if(splash&&splash.style.display!=='none')showStartupError('This is taking longer than expected. Your saved entries are safe. Tap Try Again to retry.');},10000);
  const signIn=async()=>{if(!supabase){await startCloud();if(!supabase)return}msg.textContent='Opening Google sign-in…';try{const {error}=await supabase.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.href.split('#')[0],queryParams:{prompt:'select_account'}}});if(error)msg.textContent='Sign-in failed: '+error.message}catch(error){msg.textContent='Sign-in failed: '+(error?.message||'Please retry.')}}
  $('#googleSignIn').onclick=signIn;$('#connectCloudBtn').onclick=signIn;
  try{if(!window.supabase?.createClient)throw Error('Could not load the Supabase client.');if(!supabase)supabase=window.supabase.createClient('https://dtnyyqnyfksxvgedswhj.supabase.co','sb_publishable_-Bppvb1O6mYvca2y8GNFXQ_m0adWMEh',{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
