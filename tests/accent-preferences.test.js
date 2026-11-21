@@ -12,6 +12,10 @@ const accents = ['gold', 'green', 'orange', 'grey', 'royal-blue', 'rose-pink', '
 
 test('accent preferences support all eight colours and preserve legacy saved names', () => {
   assert.ok(app.includes("['gold','green','orange','grey','royal-blue','rose-pink','crimson-red','teal']"));
+  assert.match(app, /accentVersion:2/);
+  assert.match(app, /p\.accentVersion===2[\s\S]*?: 'gold'/);
+  assert.match(app, /accentVersion:over\.accentVersion/);
+  assert.match(app, /accent:'gold'/);
   assert.ok(app.includes("amber:'gold',coral:'orange',slate:'grey'"));
   assert.match(profile, /dataset\.accent=prefs\.accent\|\|'gold'/);
   assert.match(profile, /\$\('#prefAccent'\)\.value=prefs\.accent\|\|'gold'/);
@@ -27,6 +31,8 @@ test('Settings exposes exactly the eight supported accent values', () => {
   assert.ok(settings, 'accent selector should exist');
   const values = [...settings[1].matchAll(/<option value="([^"]+)"/g)].map(x => x[1]);
   assert.deepEqual(values, accents);
+  assert.match(settings[1], /value="gold" selected>Antique Gold/);
+  for (const label of ['Sage', 'Terracotta', 'Grey', 'Dusty Blue', 'Dusty Rose', 'Muted Crimson', 'Teal']) assert.ok(settings[1].includes('>' + label + '</option>'));
   for (const accent of accents) {
     assert.ok(html.includes('[data-accent="' + accent + '"]'), 'missing dark palette for ' + accent);
     assert.ok(html.includes('[data-theme="light"][data-accent="' + accent + '"]'), 'missing light palette for ' + accent);
