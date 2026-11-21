@@ -96,7 +96,7 @@ test('progress bar and active mobile navigation styles rely on source order and 
   const navBase=get('.bottomnav button.active {',html.indexOf('.bottomnav button.active {')+1);
   const navLight=get('[data-theme="light"] .bottomnav button.active {');
   assert.match(barAccent,/linear-gradient\(90deg, #10b981 0%, #f59e0b 100%\)/);
-  assert.match(navBase,/color:\s*#f59e0b;/);
+  assert.match(navBase,/color:\s*var\(--accent\);/);
   assert.match(navLight,/color:\s*var\(--accent\);/);
   assert.doesNotMatch(barBase+barAccent+navBase+navLight,/!important/i);
 });
