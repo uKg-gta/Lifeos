@@ -28,10 +28,14 @@ function rulesFor(selector) {
 test('light theme base and accent overrides each have one consolidated CSS rule', () => {
   for (const selector of [
     '[data-theme="light"]',
-    '[data-theme="light"][data-accent="amber"]',
+    '[data-theme="light"][data-accent="gold"]',
     '[data-theme="light"][data-accent="green"]',
-    '[data-theme="light"][data-accent="coral"]',
-    '[data-theme="light"][data-accent="slate"]'
+    '[data-theme="light"][data-accent="orange"]',
+    '[data-theme="light"][data-accent="grey"]',
+    '[data-theme="light"][data-accent="royal-blue"]',
+    '[data-theme="light"][data-accent="rose-pink"]',
+    '[data-theme="light"][data-accent="crimson-red"]',
+    '[data-theme="light"][data-accent="teal"]'
   ]) {
     assert.equal(rulesFor(selector).length, 1, selector + ' should be defined once');
   }
@@ -43,14 +47,22 @@ test('consolidated light theme keeps the final contrast values', () => {
   assert.match(light, /--muted:\s*#475569/);
   assert.match(light, /--mint:\s*#047857/);
 
-  const amber = rulesFor('[data-theme="light"][data-accent="amber"]')[0];
+  const gold = rulesFor('[data-theme="light"][data-accent="gold"]')[0];
   const green = rulesFor('[data-theme="light"][data-accent="green"]')[0];
-  const coral = rulesFor('[data-theme="light"][data-accent="coral"]')[0];
-  const slate = rulesFor('[data-theme="light"][data-accent="slate"]')[0];
-  assert.match(amber, /--accent:\s*#b45309/);
+  const orange = rulesFor('[data-theme="light"][data-accent="orange"]')[0];
+  const grey = rulesFor('[data-theme="light"][data-accent="grey"]')[0];
+  const royalBlue = rulesFor('[data-theme="light"][data-accent="royal-blue"]')[0];
+  const rosePink = rulesFor('[data-theme="light"][data-accent="rose-pink"]')[0];
+  const crimsonRed = rulesFor('[data-theme="light"][data-accent="crimson-red"]')[0];
+  const teal = rulesFor('[data-theme="light"][data-accent="teal"]')[0];
+  assert.match(gold, /--accent:\s*#b45309/);
   assert.match(green, /--accent:\s*#047857/);
-  assert.match(coral, /--accent:\s*#9a3412/);
-  assert.match(slate, /--accent:\s*#334155/);
+  assert.match(orange, /--accent:\s*#c2410c/);
+  assert.match(grey, /--accent:\s*#475569/);
+  assert.match(royalBlue, /--accent:\s*#1d4ed8/);
+  assert.match(rosePink, /--accent:\s*#be185d/);
+  assert.match(crimsonRed, /--accent:\s*#b91c1c/);
+  assert.match(teal, /--accent:\s*#0f766e/);
 });
 
 test('small branding, navigation, and account labels remain readable', () => {
