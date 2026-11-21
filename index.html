@@ -66,7 +66,7 @@
   color-scheme: dark;
 }
 
-[data-accent="amber"] {
+[data-accent="gold"] {
   --coral: #fbbf24;
   --accent: #f59e0b;
   --blue: #fde68a;
@@ -80,19 +80,47 @@
   --accent-glow: rgba(16, 185, 129, 0.35);
   --accent-subtle: rgba(16, 185, 129, 0.14);
 }
-[data-accent="coral"] {
-  --coral: #f87171;
+[data-accent="orange"] {
+  --coral: #fdba74;
   --accent: #ea580c;
-  --blue: #fdba74;
+  --blue: #fed7aa;
   --accent-glow: rgba(234, 88, 12, 0.35);
   --accent-subtle: rgba(234, 88, 12, 0.14);
 }
-[data-accent="slate"] {
+[data-accent="grey"] {
   --coral: #cbd5e1;
   --accent: #94a3b8;
   --blue: #e2e8f0;
   --accent-glow: rgba(148, 163, 184, 0.35);
   --accent-subtle: rgba(148, 163, 184, 0.14);
+}
+[data-accent="royal-blue"] {
+  --coral: #93c5fd;
+  --accent: #4169e1;
+  --blue: #bfdbfe;
+  --accent-glow: rgba(65, 105, 225, 0.35);
+  --accent-subtle: rgba(65, 105, 225, 0.14);
+}
+[data-accent="rose-pink"] {
+  --coral: #f9a8d4;
+  --accent: #ec4899;
+  --blue: #fbcfe8;
+  --accent-glow: rgba(236, 72, 153, 0.35);
+  --accent-subtle: rgba(236, 72, 153, 0.14);
+}
+[data-accent="crimson-red"] {
+  --coral: #fca5a5;
+  --accent: #dc143c;
+  --blue: #fecaca;
+  --accent-glow: rgba(220, 20, 60, 0.35);
+  --accent-subtle: rgba(220, 20, 60, 0.14);
+}
+[data-accent="teal"] {
+  --coral: #5eead4;
+  --accent: #0d9488;
+  --blue: #99f6e4;
+  --accent-glow: rgba(13, 148, 136, 0.35);
+  --accent-subtle: rgba(13, 148, 136, 0.14);
 }
 
 [data-theme="light"] {
@@ -1270,11 +1298,11 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 
 /* Mobile bottom nav active button */
 .bottomnav button.active {
-  color: #f59e0b;
-  filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.45));
+  color: var(--accent);
+  filter: drop-shadow(0 0 8px var(--accent-glow));
 }
 
-[data-theme="light"][data-accent="amber"] {
+[data-theme="light"][data-accent="gold"] {
   --coral: #b45309;
   --accent: #b45309;
   --blue: #b45309;
@@ -1288,19 +1316,47 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   --accent-glow: rgba(4, 120, 87, 0.18);
   --accent-subtle: rgba(4, 120, 87, 0.12);
 }
-[data-theme="light"][data-accent="coral"] {
+[data-theme="light"][data-accent="orange"] {
   --coral: #9a3412;
-  --accent: #9a3412;
+  --accent: #c2410c;
   --blue: #c2410c;
-  --accent-glow: rgba(154, 52, 18, 0.18);
-  --accent-subtle: rgba(154, 52, 18, 0.12);
+  --accent-glow: rgba(194, 65, 12, 0.18);
+  --accent-subtle: rgba(194, 65, 12, 0.12);
 }
-[data-theme="light"][data-accent="slate"] {
+[data-theme="light"][data-accent="grey"] {
   --coral: #334155;
-  --accent: #334155;
+  --accent: #475569;
   --blue: #475569;
   --accent-glow: rgba(51, 65, 85, 0.18);
   --accent-subtle: rgba(51, 65, 85, 0.12);
+}
+[data-theme="light"][data-accent="royal-blue"] {
+  --coral: #1d4ed8;
+  --accent: #1d4ed8;
+  --blue: #1d4ed8;
+  --accent-glow: rgba(29, 78, 216, 0.18);
+  --accent-subtle: rgba(29, 78, 216, 0.12);
+}
+[data-theme="light"][data-accent="rose-pink"] {
+  --coral: #be185d;
+  --accent: #be185d;
+  --blue: #be185d;
+  --accent-glow: rgba(190, 24, 93, 0.18);
+  --accent-subtle: rgba(190, 24, 93, 0.12);
+}
+[data-theme="light"][data-accent="crimson-red"] {
+  --coral: #b91c1c;
+  --accent: #b91c1c;
+  --blue: #b91c1c;
+  --accent-glow: rgba(185, 28, 28, 0.18);
+  --accent-subtle: rgba(185, 28, 28, 0.12);
+}
+[data-theme="light"][data-accent="teal"] {
+  --coral: #0f766e;
+  --accent: #0f766e;
+  --blue: #0f766e;
+  --accent-glow: rgba(15, 118, 110, 0.18);
+  --accent-subtle: rgba(15, 118, 110, 0.12);
 }
 [data-theme="light"] .label { opacity: 1; }
 [data-theme="light"] .score {
@@ -1943,7 +1999,7 @@ html[data-theme="light"] .task-btn-danger:hover{color:#991b1b;background:rgba(22
 <section class="page" id="page-projects"><div class="heading"><div><div class="eyebrow">Plan · Long-term direction</div><h1>Goals &amp; projects</h1><p>Track long-term goals and smaller projects in one place.</p></div><button class="primary" data-add="goal">＋ New goal</button></div><div class="metrics"><div class="metric"><small>Total goals</small><strong id="goalTotal">0</strong><p>All goals created</p></div><div class="metric"><small>Active goals</small><strong id="goalCount">0</strong><p>Not marked complete</p></div></div><div class="card"><div class="head"><div class="cardtitle">Projects</div><button class="btn" data-add="project">＋ New project</button></div><div class="modules" id="projectGrid"></div></div><div class="card u-mt-15"><div class="head"><div class="cardtitle">Goals</div></div><div class="modules" id="goalGrid"></div></div></section>
 <section class="page" id="page-calendar"><div class="heading"><div><div class="eyebrow">Plan · Calendar</div><h1>See the shape of your week.</h1><p>A simple internal calendar for dated tasks, deadlines, study sessions and milestones. Not shown on the dashboard.</p></div><div><button class="btn" id="prevWeek" aria-label="Previous week">←</button> <button class="btn" id="thisWeek">This week</button> <button class="btn" id="nextWeek" aria-label="Next week">→</button></div></div><div class="card"><div class="head"><div class="cardtitle" id="calendarTitle">This week</div><button class="linkbtn" data-add="task">＋ Task</button></div><div class="table" id="calendarList"></div></div></section>
 <section class="page" id="page-settings"><div class="heading"><div><div class="eyebrow">Your workspace</div><h1>Settings</h1><p>Make LifeOS fit your day. Your preferences and records sync to your private cloud workspace.</p></div></div>
-<div class="card setting-section"><div class="head"><div><div class="cardtitle">Appearance</div><div class="tiny muted">A consistent look across LifeOS</div></div></div><div class="settings-options"><div class="field"><label for="prefTheme">Theme</label><select id="prefTheme"><option value="system">System</option><option value="dark">Dark</option><option value="light">Light</option></select></div><div class="field"><label for="prefDensity">Interface density</label><select id="prefDensity"><option value="compact">Compact</option><option value="comfortable">Comfortable</option><option value="spacious">Spacious</option></select></div><div class="field"><label for="prefFont">Font size</label><select id="prefFont"><option value="small">Small</option><option value="default">Default</option><option value="large">Large</option></select></div><div class="field"><label for="prefAccent">Accent colour</label><select id="prefAccent"><option value="amber" selected>Warm amber / Gold</option><option value="green">Emerald / Mint</option><option value="coral">Terracotta / Rust</option><option value="slate">Platinum slate</option></select><div class="tiny muted u-mt-5">Changes highlights, active navigation and buttons.</div></div></div><div class="settingrow"><div><b>Sidebar width</b><p>Choose a compact or expanded navigation rail.</p></div><button class="btn" id="settingsSidebar">Collapse sidebar</button></div></div>
+<div class="card setting-section"><div class="head"><div><div class="cardtitle">Appearance</div><div class="tiny muted">A consistent look across LifeOS</div></div></div><div class="settings-options"><div class="field"><label for="prefTheme">Theme</label><select id="prefTheme"><option value="system">System</option><option value="dark">Dark</option><option value="light">Light</option></select></div><div class="field"><label for="prefDensity">Interface density</label><select id="prefDensity"><option value="compact">Compact</option><option value="comfortable">Comfortable</option><option value="spacious">Spacious</option></select></div><div class="field"><label for="prefFont">Font size</label><select id="prefFont"><option value="small">Small</option><option value="default">Default</option><option value="large">Large</option></select></div><div class="field"><label for="prefAccent">Accent colour</label><select id="prefAccent"><option value="gold" selected>Gold</option><option value="green">Green</option><option value="orange">Orange</option><option value="grey">Grey</option><option value="royal-blue">Royal Blue</option><option value="rose-pink">Rose Pink</option><option value="crimson-red">Crimson Red</option><option value="teal">Teal</option></select><div class="tiny muted u-mt-5">Changes highlights, active navigation and buttons.</div></div></div><div class="settingrow"><div><b>Sidebar width</b><p>Choose a compact or expanded navigation rail.</p></div><button class="btn" id="settingsSidebar">Collapse sidebar</button></div></div>
 <div class="card setting-section"><div class="head"><div><div class="cardtitle">Workspace</div><div class="tiny muted">Keep navigation relevant without deleting anything</div></div></div><div class="settingrow"><div><b>Sidebar modules</b><p>Dashboard and Settings always stay visible. Hiding a module never deletes its records.</p></div></div><div class="settings-options" id="moduleToggles"></div><div class="head u-mt-18"><div class="cardtitle">Dashboard summaries</div></div><div class="settings-options"><label><input type="checkbox" id="summaryTasks"> Today's tasks</label><label><input type="checkbox" id="summaryStudy"> Study summary</label><label><input type="checkbox" id="summaryHabits"> Today's habits</label></div></div>
 <div class="card setting-section"><div class="head"><div><div class="cardtitle">Time & planning</div><div class="tiny muted">Date and calendar preferences</div></div></div><div class="settings-options"><div class="field"><label>Week starts</label><input class="input" value="Monday" disabled><div class="tiny muted">Monday is used throughout LifeOS.</div></div><div class="field"><label for="prefClock">Clock format</label><select id="prefClock"><option value="12">12-hour</option><option value="24">24-hour</option></select></div><div class="field"><label for="prefDate">Date format</label><select id="prefDate"><option value="dmy">DD/MM/YYYY</option><option value="mdy">MM/DD/YYYY</option><option value="iso">YYYY-MM-DD</option></select></div><div class="field"><label for="targetH">Daily study target <strong class="targetdisplay" id="targetDisplay">3h 00m</strong></label><div class="targetform"><label for="targetH">Hours<input id="targetH" type="number" min="0" max="24" step="1" inputmode="numeric"></label><label for="targetM">Minutes<input id="targetM" type="number" min="0" max="59" step="1" inputmode="numeric"></label><button class="btn" id="saveTarget">Save target</button></div><div class="tiny muted u-mt-9" id="targetSummary">Customisable · drives the Dashboard progress bar</div></div><div class="field"><label for="prefBudgetResetDay">Monthly budget reset</label><select id="prefBudgetResetDay"><option value="1">1st of each month</option><option value="2">2nd of each month</option><option value="3">3rd of each month</option><option value="4">4th of each month</option><option value="5">5th of each month</option><option value="6">6th of each month</option><option value="7">7th of each month</option><option value="8">8th of each month</option><option value="9">9th of each month</option><option value="10">10th of each month</option><option value="11">11th of each month</option><option value="12">12th of each month</option><option value="13">13th of each month</option><option value="14">14th of each month</option><option value="15">15th of each month</option><option value="16">16th of each month</option><option value="17">17th of each month</option><option value="18">18th of each month</option><option value="19">19th of each month</option><option value="20">20th of each month</option><option value="21">21th of each month</option><option value="22">22th of each month</option><option value="23">23th of each month</option><option value="24">24th of each month</option><option value="25">25th of each month</option><option value="26">26th of each month</option><option value="27">27th of each month</option><option value="28">28th of each month</option></select><div class="tiny muted">Income and budget cycle run from this date through the day before the next reset.</div></div></div></div>
 <div class="card setting-section" id="pushSettings"><div class="head"><div><div class="cardtitle">Push notifications</div><div class="tiny muted">Reminders from LifeOS, even when it is closed</div></div><span class="pill" id="pushStatus">Not enabled</span></div>
