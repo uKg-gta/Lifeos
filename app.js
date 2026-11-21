@@ -26,7 +26,10 @@ function withIds(list){const seen=new Set();return list.map(x=>{const n=Number(x
 function normalizePrefs(p){
   const d=defaultPrefs();p=p&&typeof p==='object'?p:{};const sm=p.summaries&&typeof p.summaries==='object'?p.summaries:{};
   const word=(v,def)=>typeof v==='string'&&/^[a-z-]{1,20}$/.test(v)?v:def;
-  const accent= p.accentVersion===2 ? pick(({amber:'gold',coral:'orange',slate:'grey',blue:'gold',violet:'green'})[p.accent]||p.accent,['gold','green','orange','grey','royal-blue','rose-pink','crimson-red','teal'],d.accent) : 'gold';
+  const supportedAccents=['gold','green','orange','grey','royal-blue','rose-pink','crimson-red','teal'];
+  const savedAccent=({amber:'gold',coral:'orange',slate:'grey',blue:'gold',violet:'green'})[p.accent]||p.accent;
+  // Keep an explicitly saved modern accent even when an older client omitted the version marker.
+  const accent=p.accentVersion===2||supportedAccents.includes(savedAccent)?pick(savedAccent,supportedAccents,d.accent):'gold';
   return{theme:pick(p.theme,['dark','light','system'],d.theme),accent,accentVersion:2,density:word(p.density,d.density),font:word(p.font,d.font),name:str(p.name,'',60),motto:str(p.motto,'',120),avatar:str(p.avatar,d.avatar,8),picture:safePic(p.picture),hiddenModules:(Array.isArray(p.hiddenModules)?p.hiddenModules:[]).filter(x=>typeof x==='string'&&/^[a-z]{1,20}$/.test(x)),summaries:{tasks:sm.tasks!==false,study:sm.study!==false,habits:sm.habits!==false},weekStart:1,clock:pick(p.clock,['12','24'],'12'),dateFormat:pick(p.dateFormat,['dmy','mdy','iso'],'dmy'),budgetResetDay:(()=>{const n=Math.round(Number(p.budgetResetDay));return Number.isInteger(n)&&n>=1&&n<=28?n:d.budgetResetDay})(),studyTargetMins:(()=>{const m=Math.round(Number(p.studyTargetMins));return Number.isFinite(m)&&m>=5&&m<=1440?m:d.studyTargetMins})()}
 }
 function mergePrefs(base,over){over=over&&typeof over==='object'?over:{};return normalizePrefs({...base,...over,accentVersion:over.accentVersion,summaries:{...((base&&base.summaries)||{}),...(over.summaries||{})}})}
