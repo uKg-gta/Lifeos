@@ -6,6 +6,7 @@ const path=require('node:path');
 const worker=fs.readFileSync(path.join(__dirname,'../sw.js'),'utf8');
 const app=fs.readFileSync(path.join(__dirname,'../app.js'),'utf8');
 const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
+const dispatch=fs.readFileSync(path.join(__dirname,'../supabase/functions/push-dispatch/index.ts'),'utf8');
 test('service worker only retires legacy caches and does not cache workspace data',()=>{
  assert.ok(worker.includes("caches.delete(key)"));
  assert.ok(worker.includes("lifeos-shell-"));
@@ -24,5 +25,19 @@ test('push settings cover all requested categories and device controls',()=>{
  assert.ok(app.includes("lifeos_push_subscriptions"));
  assert.ok(app.includes("lifeos_push_preferences"));
 });
-
-test('task and study reminders run at 8 AM, 3 PM and 10 PM with per-slot deduplication',()=>{ const d=fs.readFileSync(path.join(__dirname,'../supabase/functions/push-dispatch/index.ts'),'utf8'); assert.ok(d.includes('[8,15,22].includes(hour)')); assert.ok(d.includes(':task:${hour}:')); assert.ok(d.includes(':study:${hour}')); assert.ok(d.includes('studied<target')); });
+test('task and study reminders run at 8 AM, 3 PM and 10 PM with per-slot deduplication',()=>{
+ assert.ok(dispatch.includes('[8,15,22].includes(hour)'));
+ assert.ok(dispatch.includes(':task:${hour}:'));
+ assert.ok(dispatch.includes(':study:${hour}'));
+ assert.ok(dispatch.includes('studied<target'));
+});
+test('scheduled dispatcher authenticates through its Vault-backed custom header and reports backend failures',()=>{
+ assert.ok(dispatch.includes('x-lifeos-cron-secret'));
+ assert.ok(dispatch.includes('verify_lifeos_push_cron_secret'));
+ assert.ok(dispatch.includes('error:authError'));
+ assert.ok(dispatch.includes('workspaceError'));
+ assert.ok(dispatch.includes('subsError'));
+});
+test('quiet hours are evaluated at minute precision',()=>{
+ assert.ok(dispatch.includes('hour*60+minute'));
+});
