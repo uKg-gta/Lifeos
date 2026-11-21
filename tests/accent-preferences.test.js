@@ -13,7 +13,8 @@ const accents = ['gold', 'green', 'orange', 'grey', 'royal-blue', 'rose-pink', '
 test('accent preferences support all eight colours and preserve legacy saved names', () => {
   assert.ok(app.includes("['gold','green','orange','grey','royal-blue','rose-pink','crimson-red','teal']"));
   assert.match(app, /accentVersion:2/);
-  assert.match(app, /p\.accentVersion===2[\s\S]*?: 'gold'/);
+  assert.match(app, /p\.accentVersion===2\|\|supportedAccents\.includes\(savedAccent\)/);
+  assert.match(app, /Keep an explicitly saved modern accent/);
   assert.match(app, /accentVersion:over\.accentVersion/);
   assert.match(app, /accent:'gold'/);
   assert.ok(app.includes("amber:'gold',coral:'orange',slate:'grey'"));
