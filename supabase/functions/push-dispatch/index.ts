@@ -3,21 +3,24 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{"Content-Type":"application/json","Cache-Control":"no-store"}});
 const local=(d:Date,tz:string)=>Object.fromEntries(new Intl.DateTimeFormat("en-CA",{timeZone:tz,year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(d).map(p=>[p.type,p.value]));
-const quiet=(hour:number,start:string,end:string)=>{const m=(v:string)=>{const [h,n]=v.split(":").map(Number);return h*60+n};const now=hour*60,a=m(start),b=m(end);return a===b?false:a<b?now>=a&&now<b:now>=a||now<b};
+const quiet=(hour:number,minute:number,start:string,end:string)=>{const m=(v:string)=>{const [h,n]=v.split(":").map(Number);return h*60+n};const now=hour*60+minute,a=m(start),b=m(end);return a===b?false:a<b?now>=a&&now<b:now>=a||now<b};
 Deno.serve(async(req:Request)=>{
  if(req.method!=="POST")return json({error:"Method not allowed"},405);
- const secret=Deno.env.get("PUSH_CRON_SECRET");if(!secret||req.headers.get("Authorization")!==`Bearer ${secret}`)return json({error:"Unauthorized"},401);
  const url=Deno.env.get("SUPABASE_URL"),key=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"),pub=Deno.env.get("VAPID_PUBLIC_KEY"),priv=Deno.env.get("VAPID_PRIVATE_KEY");
  if(!url||!key||!pub||!priv)return json({error:"Push secrets are not configured"},503);
+ const db=createClient(url,key,{auth:{persistSession:false}});
+ const supplied=req.headers.get("x-lifeos-cron-secret");
+ const {data:authorized,error:authError}=await db.rpc("verify_lifeos_push_cron_secret",{candidate:supplied});
+ if(authError||authorized!==true)return json({error:"Unauthorized"},401);
  webpush.setVapidDetails(Deno.env.get("VAPID_SUBJECT")||"mailto:lifeos@example.com",pub,priv);
- const db=createClient(url,key,{auth:{persistSession:false}}),{data:prefs,error}=await db.from("lifeos_push_preferences").select("*").eq("enabled",true);
+ const {data:prefs,error}=await db.from("lifeos_push_preferences").select("*").eq("enabled",true);
  if(error)return json({error:error.message},500);
  let sent=0,removed=0,skipped=0;const now=new Date();
  for(const p of prefs||[]){
   let x:Record<string,string>;try{x=local(now,p.timezone||"Asia/Kolkata")}catch{skipped++;continue}
   const hour=Number(x.hour),minute=Number(x.minute),today=`${x.year}-${x.month}-${x.day}`;
-  if(quiet(hour,String(p.quiet_start).slice(0,5),String(p.quiet_end).slice(0,5))){skipped++;continue}
-  const {data:r}=await db.from("lifeos_workspace").select("data").eq("user_id",p.user_id).maybeSingle(),w=r?.data?.workspace||{},cats=p.categories||{};
+  if(quiet(hour,minute,String(p.quiet_start).slice(0,5),String(p.quiet_end).slice(0,5))){skipped++;continue}
+  const {data:r,error:workspaceError}=await db.from("lifeos_workspace").select("data").eq("user_id",p.user_id).maybeSingle();if(workspaceError){console.error("Push workspace read failed",workspaceError.message);skipped++;continue}const w=r?.data?.workspace||{},cats=p.categories||{};
   const items:Array<{category:string;key:string;title:string;body:string}>=[];
   const reminderSlot=minute===0&&[8,15,22].includes(hour);
   if(reminderSlot&&cats.tasks!==false)for(const t of w.tasks||[])if(t.status!=="done"&&t.due&&t.due<=today)items.push({category:"tasks",key:`${today}:task:${hour}:${t.id}:${t.due}`,title:"Task reminder",body:t.title||"You have a task due."});
@@ -27,10 +30,10 @@ Deno.serve(async(req:Request)=>{
   const studied=(w.sessions||[]).filter((s:any)=>s.date===today).reduce((sum:number,s:any)=>sum+(Number(s.minutes)||0),0);
   if(reminderSlot&&cats.study!==false&&studied<target)items.push({category:"study",key:`${today}:study:${hour}`,title:"Study target reminder",body:`Study progress: ${studied} of ${target} minutes completed today.`});
   if(!items.length){skipped++;continue}
-  const {data:subs}=await db.from("lifeos_push_subscriptions").select("id,endpoint,p256dh,auth").eq("user_id",p.user_id);if(!subs?.length){skipped++;continue}
+  const {data:subs,error:subsError}=await db.from("lifeos_push_subscriptions").select("id,endpoint,p256dh,auth").eq("user_id",p.user_id);if(subsError){console.error("Push subscription read failed",subsError.message);skipped++;continue}if(!subs?.length){skipped++;continue}
   for(const item of items){
-   const {data:old}=await db.from("lifeos_push_delivery_log").select("id").eq("user_id",p.user_id).eq("category",item.category).eq("reminder_key",item.key).maybeSingle();if(old)continue;
-   let ok=false;for(const s of subs)try{await webpush.sendNotification({endpoint:s.endpoint,keys:{p256dh:s.p256dh,auth:s.auth}},JSON.stringify({...item,url:"./"}),{TTL:3600});ok=true}catch(e){const status=(e as any)?.statusCode;if(status===404||status===410){await db.from("lifeos_push_subscriptions").delete().eq("id",s.id);removed++}}
+   const {data:old,error:logReadError}=await db.from("lifeos_push_delivery_log").select("id").eq("user_id",p.user_id).eq("category",item.category).eq("reminder_key",item.key).maybeSingle();if(logReadError){console.error("Push dedupe read failed",logReadError.message);skipped++;continue}if(old)continue;
+   let ok=false;for(const s of subs)try{await webpush.sendNotification({endpoint:s.endpoint,keys:{p256dh:s.p256dh,auth:s.auth}},JSON.stringify({...item,url:"./"}),{TTL:3600});ok=true}catch(e){const status=(e as any)?.statusCode;console.error("Push provider send failed",status||"unknown",(e as Error)?.message||"");if(status===404||status===410){const {error:deleteError}=await db.from("lifeos_push_subscriptions").delete().eq("id",s.id);if(deleteError)console.error("Expired push subscription cleanup failed",deleteError.message);else removed++}}
    if(ok){const {error:e}=await db.from("lifeos_push_delivery_log").insert({user_id:p.user_id,category:item.category,reminder_key:item.key});if(!e)sent++}
   }
  }
