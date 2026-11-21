@@ -113,33 +113,35 @@ async function pushCloud(){
  pushPromise=task;try{return await task}finally{if(pushPromise===task)pushPromise=null}
 }
 async function flushCloud(){clearTimeout(cloudTimer);cloudTimer=null;if(!cloudReady)return false;if(!dirty)return true;return pushCloud()}
-async function syncNow(){if(!cloudReady||!supabase||!cloudUser)return;try{const row=await fetchRemote();if(row)applyRemoteRow(row)}catch(error){cloudReady=false;$('#authGate').style.display='flex';$('#authMessage').textContent='An internet connection is required to access your workspace.';setSync('Cloud connection lost. Reconnect to continue.')}}
+async function syncNow(){if(!cloudReady||!supabase||!cloudUser)return;try{const row=await fetchRemote();if(row)applyRemoteRow(row)}catch(error){cloudReady=false;setSync('Cloud connection lost. Reconnect to sync your workspace.')}}
 async function signOutFromLifeOS(){
  const btn=$('#signOutBtn');if(!supabase||btn?.disabled)return;
  if(dirty){if(btn)btn.disabled=true;const ok=await flushCloud();if(!ok||dirty){if(btn)btn.disabled=false;toast('Sign-out paused: your latest changes are not confirmed in the cloud. Reconnect and retry.');return}}
  cloudReady=false;if(btn)btn.disabled=true;try{const {error}=await supabase.auth.signOut({scope:'local'});if(error)throw error;handleSignedOut('Signed out. Your workspace remains in the cloud.')}catch(error){cloudReady=!!cloudUser;toast('Could not sign out: '+(error?.message||'Please retry.'))}finally{if(btn)btn.disabled=false}
 }
+function hideStartupSplash(){const splash=$('#startupSplash');if(!splash)return;splash.classList.add('is-hiding');setTimeout(()=>{splash.style.display='none';splash.classList.remove('is-hiding')},180)}
+function showStartupError(message){const splash=$('#startupSplash');if(!splash)return;$('#startupMessage').textContent=message;$('#startupRetry').hidden=false;splash.style.display='flex';splash.classList.remove('is-hiding')}
 function handleSignedOut(message){
  cloudReady=false;activating=false;dirty=false;baseRevision=0;baseStamp=null;lastCloudPayload='';baseSnapshot=null;lastLocalSnapshot=null;cloudUser=null;s=seed();prefs=defaultPrefs();window.__lifeosCloudLoaded=false;clearTimeout(cloudTimer);cloudTimer=null;clearConflictActions();
  if(window.__lifeosChannel&&supabase){supabase.removeChannel(window.__lifeosChannel);window.__lifeosChannel=null}
  $('#accountStatus').textContent='Signed out';$('#accountEmail').textContent='Sign in to load your cloud workspace.';$('#connectCloudBtn').hidden=false;$('#signOutBtn').hidden=true;$('#authGate').style.display='flex';$('#authMessage').textContent=message||'Sign in to access your online workspace.';setSync('Not connected.');
 }
 async function startCloud(){
- const gate=$('#authGate'),msg=$('#authMessage');$('#signOutBtn').onclick=signOutFromLifeOS;
+ const gate=$('#authGate'),msg=$('#authMessage');$('#signOutBtn').onclick=signOutFromLifeOS;$('#startupRetry').onclick=()=>{const retry=$('#startupRetry');retry.hidden=true;$('#startupMessage').textContent='Restoring your workspace…';startCloud()};
  const signIn=async()=>{if(!supabase){await startCloud();if(!supabase)return}msg.textContent='Opening Google sign-in…';try{const {error}=await supabase.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.href.split('#')[0],queryParams:{prompt:'select_account'}}});if(error)msg.textContent='Sign-in failed: '+error.message}catch(error){msg.textContent='Sign-in failed: '+(error?.message||'Please retry.')}}
  $('#googleSignIn').onclick=signIn;$('#connectCloudBtn').onclick=signIn;
- try{if(!window.supabase?.createClient)throw Error('Could not load the Supabase client.');if(!supabase)supabase=window.supabase.createClient('https://dtnyyqnyfksxvgedswhj.supabase.co','sb_publishable_-Bppvb1O6mYvca2y8GNFXQ_m0adWMEh');
+ try{if(!window.supabase?.createClient)throw Error('Could not load the Supabase client.');if(!supabase)supabase=window.supabase.createClient('https://dtnyyqnyfksxvgedswhj.supabase.co','sb_publishable_-Bppvb1O6mYvca2y8GNFXQ_m0adWMEh',{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
   if(!authSubscription){const {data:{subscription}}=supabase.auth.onAuthStateChange((event,session)=>{if(session&&event==='SIGNED_IN')setTimeout(()=>activateSession(session),0);if(event==='SIGNED_OUT'&&cloudUser)handleSignedOut()});authSubscription=subscription;window.addEventListener('beforeunload',()=>authSubscription?.unsubscribe())}
   const {data:{session},error}=await supabase.auth.getSession();if(error)throw error;if(session){await activateSession(session);return}
-  cloudUser=null;cloudReady=false;$('#accountStatus').textContent='Signed out';$('#accountEmail').textContent='Sign in to load your cloud workspace.';$('#connectCloudBtn').hidden=false;$('#signOutBtn').hidden=true;setSync('Sign in to access your online data.');gate.style.display='flex';
- }catch(error){cloudReady=false;gate.style.display='flex';$('#accountStatus').textContent='Connection required';$('#connectCloudBtn').hidden=false;$('#signOutBtn').hidden=!cloudUser;setSync('Online connection required.');msg.textContent='LifeOS needs an internet connection: '+(error?.message||'Please retry.')}
+  cloudUser=null;cloudReady=false;$('#accountStatus').textContent='Signed out';$('#accountEmail').textContent='Sign in to load your cloud workspace.';$('#connectCloudBtn').hidden=false;$('#signOutBtn').hidden=true;setSync('Sign in to access your online data.');gate.style.display='flex';hideStartupSplash();
+ }catch(error){cloudReady=false;$('#accountStatus').textContent='Connection required';$('#connectCloudBtn').hidden=false;$('#signOutBtn').hidden=true;setSync('Unable to restore your session. Check your connection and retry.');msg.textContent='LifeOS could not restore the session: '+(error?.message||'Please retry.');showStartupError('Could not restore your workspace. Check your connection and try again.')}
 }
 async function activateSession(session){
  const gate=$('#authGate');
  if(!supabase||!session?.user)return;const user=session.user;if(cloudUser?.id===user.id&&(cloudReady||activating))return;
  const preserveMemory=cloudUser?.id===user.id&&dirty&&!!baseSnapshot;
  const memorySnapshot=preserveMemory?currentSnapshot():null,previousBase=preserveMemory?baseSnapshot:null;
- activating=true;cloudReady=false;cloudUser=user;$('#authGate').style.display='flex';$('#authMessage').textContent='Loading your cloud workspace…';
+ activating=true;cloudReady=false;cloudUser=user;$('#authGate').style.display='none';$('#startupRetry').hidden=true;$('#startupMessage').textContent='Restoring your workspace…';
  try{
   const remote=await fetchRemote();if(cloudUser?.id!==user.id)return;
   const cloudSnapshot=remote?{workspace:normalizeWorkspace(remote.data.workspace||{}),preferences:mergePrefs(defaultPrefs(),remote.data.preferences)}:{workspace:seed(),preferences:defaultPrefs()};
@@ -158,7 +160,7 @@ async function activateSession(session){
   baseRevision=Number(remote?.revision)||0;baseStamp=remote?.updated_at||null;baseSnapshot=cloudSnapshot;lastCloudPayload=JSON.stringify(cloudSnapshot);
   dirty=!remote||JSON.stringify(currentSnapshot())!==lastCloudPayload;lastLocalSnapshot=currentSnapshot();
   window.__lifeosCloudLoaded=true;cloudReady=true;$('#accountStatus').textContent='Connected';$('#accountEmail').textContent=user.email||'Signed in with Google';$('#connectCloudBtn').hidden=true;$('#signOutBtn').hidden=false;gate.style.display='none';
-  setSync(legacy.length?'Recovering this account’s saved entries to the cloud…':remote?'Loaded your cloud workspace.':'Creating your cloud workspace…');setup();
+  setSync(legacy.length?'Recovering this account’s saved entries to the cloud…':remote?'Loaded your cloud workspace.':'Creating your cloud workspace…');setup();hideStartupSplash();
   let saved=true;if(dirty)saved=await pushCloud();
   if(legacy.length&&saved&&!dirty){
     const confirmed=await fetchRemote();
@@ -169,7 +171,7 @@ async function activateSession(session){
     }else setSync('Cloud save needs verification. The old device copy has been preserved.');
   }
   if(window.__lifeosChannel)supabase.removeChannel(window.__lifeosChannel);window.__lifeosChannel=supabase.channel('lifeos-workspace-sync').on('postgres_changes',{event:'UPDATE',schema:'public',table:'lifeos_workspace',filter:'user_id=eq.'+user.id},payload=>{if(cloudReady&&payload.new?.data)applyRemoteRow(payload.new)}).subscribe();
- }catch(error){cloudReady=false;console.error('LifeOS cloud activation failed:',error);gate.style.display='flex';$('#accountStatus').textContent='Connection required';$('#connectCloudBtn').hidden=false;$('#signOutBtn').hidden=false;const detail=String(error?.message||error||'Unknown cloud activation error');setSync('Cloud activation failed: '+detail);$('#authMessage').textContent='Could not load your cloud workspace: '+detail+'. No cloud data was changed.'}
+ }catch(error){cloudReady=false;console.error('LifeOS cloud activation failed:',error);$('#accountStatus').textContent='Connection required';$('#connectCloudBtn').hidden=true;$('#signOutBtn').hidden=false;const detail=String(error?.message||error||'Unknown cloud activation error');setSync('Cloud activation failed: '+detail);showStartupError('Could not load your workspace. Check your connection and try again. No entries were deleted or changed.')}
  finally{activating=false}
 }
 /* ===== end rewritten block ===== */
@@ -239,7 +241,7 @@ function bindGlobalsOnce(){
   });
   window.addEventListener('pagehide',flushCloud);
   window.addEventListener('online',()=>{if(!cloudReady){startCloud();return}if(dirty)pushCloud();else syncNow()});
-  window.addEventListener('offline',()=>{$('#authGate').style.display='flex';$('#authMessage').textContent='LifeOS requires an internet connection. Reconnect to access your cloud workspace.';setSync('Offline — reconnect to continue using LifeOS.')});
+  window.addEventListener('offline',()=>{setSync('Offline — reconnect to sync your workspace.')});
   setInterval(()=>{updateDateLabels();updateLifeOSGreeting();dayCheck()},30000);
 }
 
