@@ -127,14 +127,18 @@ function handleSignedOut(message){
  $('#accountStatus').textContent='Signed out';$('#accountEmail').textContent='Sign in to load your cloud workspace.';$('#connectCloudBtn').hidden=false;$('#signOutBtn').hidden=true;$('#authGate').style.display='flex';$('#authMessage').textContent=message||'Sign in to access your online workspace.';setSync('Not connected.');
 }
 async function startCloud(){
- const gate=$('#authGate'),msg=$('#authMessage');$('#signOutBtn').onclick=signOutFromLifeOS;$('#startupRetry').onclick=()=>{const retry=$('#startupRetry');retry.hidden=true;$('#startupMessage').textContent='Restoring your workspace…';startCloud()};
+ const gate=$('#authGate'),msg=$('#authMessage');
+ $('#signOutBtn').onclick=signOutFromLifeOS;
+ $('#startupRetry').onclick=()=>location.reload();
+ const startupTimeout=setTimeout(()=>showStartupError('This is taking longer than expected. Your saved entries are safe. Tap Try Again to retry.'),10000);
  const signIn=async()=>{if(!supabase){await startCloud();if(!supabase)return}msg.textContent='Opening Google sign-in…';try{const {error}=await supabase.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.href.split('#')[0],queryParams:{prompt:'select_account'}}});if(error)msg.textContent='Sign-in failed: '+error.message}catch(error){msg.textContent='Sign-in failed: '+(error?.message||'Please retry.')}}
  $('#googleSignIn').onclick=signIn;$('#connectCloudBtn').onclick=signIn;
  try{if(!window.supabase?.createClient)throw Error('Could not load the Supabase client.');if(!supabase)supabase=window.supabase.createClient('https://dtnyyqnyfksxvgedswhj.supabase.co','sb_publishable_-Bppvb1O6mYvca2y8GNFXQ_m0adWMEh',{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
-  if(!authSubscription){const {data:{subscription}}=supabase.auth.onAuthStateChange((event,session)=>{if(session&&event==='SIGNED_IN')setTimeout(()=>activateSession(session),0);if(event==='SIGNED_OUT'&&cloudUser)handleSignedOut()});authSubscription=subscription;window.addEventListener('beforeunload',()=>authSubscription?.unsubscribe())}
+  if(!authSubscription){const {data:{subscription}}=await supabase.auth.onAuthStateChange((event,session)=>{if(session&&event==='SIGNED_IN')setTimeout(()=>activateSession(session),0);if(event==='SIGNED_OUT'&&cloudUser)handleSignedOut()});authSubscription=subscription;window.addEventListener('beforeunload',()=>authSubscription?.unsubscribe())}
   const {data:{session},error}=await supabase.auth.getSession();if(error)throw error;if(session){await activateSession(session);return}
   cloudUser=null;cloudReady=false;$('#accountStatus').textContent='Signed out';$('#accountEmail').textContent='Sign in to load your cloud workspace.';$('#connectCloudBtn').hidden=false;$('#signOutBtn').hidden=true;setSync('Sign in to access your online data.');gate.style.display='flex';hideStartupSplash();
  }catch(error){cloudReady=false;$('#accountStatus').textContent='Connection required';$('#connectCloudBtn').hidden=false;$('#signOutBtn').hidden=true;setSync('Unable to restore your session. Check your connection and retry.');msg.textContent='LifeOS could not restore the session: '+(error?.message||'Please retry.');showStartupError('Could not restore your workspace. Check your connection and try again.')}
+ finally{clearTimeout(startupTimeout)}
 }
 async function activateSession(session){
  const gate=$('#authGate');
