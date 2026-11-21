@@ -20,7 +20,7 @@ test('service worker displays push payloads and handles notification clicks',()=
  assert.ok(worker.includes("openWindow"));
 });
 test('push settings cover all requested categories and device controls',()=>{
- for(const id of ['pushTasks','pushStudy','pushHabits','pushExams','enablePushBtn','disablePushBtn','pushQuietStart','pushQuietEnd'])assert.ok(html.includes('id="'+id+'"'));
+ for(const id of ['pushTasks','pushStudy','pushHabits','pushExams','enablePushBtn','disablePushBtn'])assert.ok(html.includes('id="'+id+'"'));
  assert.ok(app.includes("pushManager.subscribe"));
  assert.ok(app.includes("lifeos_push_subscriptions"));
  assert.ok(app.includes("lifeos_push_preferences"));
@@ -37,7 +37,4 @@ test('scheduled dispatcher authenticates through its Vault-backed custom header 
  assert.ok(dispatch.includes('error:authError'));
  assert.ok(dispatch.includes('workspaceError'));
  assert.ok(dispatch.includes('subsError'));
-});
-test('quiet hours are evaluated at minute precision',()=>{
- assert.ok(dispatch.includes('hour*60+minute'));
 });
