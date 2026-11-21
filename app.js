@@ -127,7 +127,7 @@ function handleSignedOut(message){
  $('#accountStatus').textContent='Signed out';$('#accountEmail').textContent='Sign in to load your cloud workspace.';$('#connectCloudBtn').hidden=false;$('#signOutBtn').hidden=true;$('#authGate').style.display='flex';$('#authMessage').textContent=message||'Sign in to access your online workspace.';setSync('Not connected.');
 }
 async function startCloud(){
- const gate=$('#authGate'),msg=$('#authMessage');const splash=$('#startupSplash');if(splash&&!splash.dataset.startedAt){splash.dataset.startedAt=String(Date.now());splash.dataset.hideScheduled='false'}
+ const gate=$('#authGate'),msg=$('#authMessage');const splash=$('#startupSplash');if(splash&&!splash.dataset.startedAt){splash.dataset.startedAt=String(Date.now());splash.dataset.hideScheduled='false'}if(splash)$('#startupMessage').textContent='Fetching your account…';
  $('#signOutBtn').onclick=signOutFromLifeOS;
  $('#startupRetry').onclick=()=>location.reload();
  const startupTimeout=setTimeout(()=>{const splash=$('#startupSplash');if(splash&&splash.style.display!=='none')showStartupError('This is taking longer than expected. Your saved entries are safe. Tap Try Again to retry.');},10000);
