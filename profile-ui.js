@@ -34,11 +34,11 @@
       const systemPrefersDark=typeof window!=='undefined'&&window.matchMedia?window.matchMedia('(prefers-color-scheme: dark)').matches:false;
       const resolvedTheme=prefs.theme==='system'?(systemPrefersDark?'dark':'light'):prefs.theme;
       document.documentElement.dataset.theme=resolvedTheme==='light'?'light':'dark';
-      document.documentElement.dataset.accent=prefs.accent||'amber';
+      document.documentElement.dataset.accent=prefs.accent||'gold';
       document.documentElement.dataset.density=prefs.density||'comfortable';
       document.documentElement.dataset.font=prefs.font||'default';
       $('#themeBtn').textContent=resolvedTheme==='light'?'☾':'☼';
-      $('#prefTheme').value=prefs.theme;$('#prefAccent').value=prefs.accent||'amber';$('#prefDensity').value=prefs.density;$('#prefFont').value=prefs.font;
+      $('#prefTheme').value=prefs.theme;$('#prefAccent').value=prefs.accent||'gold';$('#prefDensity').value=prefs.density;$('#prefFont').value=prefs.font;
       prefs.weekStart=1;$('#prefClock').value=prefs.clock||'12';$('#prefDate').value=prefs.dateFormat||'dmy';$('#prefBudgetResetDay').value=String(prefs.budgetResetDay||1);
       $('#summaryTasks').checked=prefs.summaries?.tasks!==false;$('#summaryStudy').checked=prefs.summaries?.study!==false;$('#summaryHabits').checked=prefs.summaries?.habits!==false;
       const avatar=$('#profileAvatar');avatar.innerHTML=prefs.picture?'<img src="'+prefs.picture+'" alt="Profile picture">':safe(prefs.avatar||'UG');
