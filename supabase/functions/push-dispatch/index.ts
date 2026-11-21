@@ -3,7 +3,6 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{"Content-Type":"application/json","Cache-Control":"no-store"}});
 const local=(d:Date,tz:string)=>Object.fromEntries(new Intl.DateTimeFormat("en-CA",{timeZone:tz,year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(d).map(p=>[p.type,p.value]));
-const quiet=(hour:number,minute:number,start:string,end:string)=>{const m=(v:string)=>{const [h,n]=v.split(":").map(Number);return h*60+n};const now=hour*60+minute,a=m(start),b=m(end);return a===b?false:a<b?now>=a&&now<b:now>=a||now<b};
 Deno.serve(async(req:Request)=>{
  if(req.method!=="POST")return json({error:"Method not allowed"},405);
  const url=Deno.env.get("SUPABASE_URL"),key=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"),pub=Deno.env.get("VAPID_PUBLIC_KEY"),priv=Deno.env.get("VAPID_PRIVATE_KEY");
@@ -19,7 +18,6 @@ Deno.serve(async(req:Request)=>{
  for(const p of prefs||[]){
   let x:Record<string,string>;try{x=local(now,p.timezone||"Asia/Kolkata")}catch{skipped++;continue}
   const hour=Number(x.hour),minute=Number(x.minute),today=`${x.year}-${x.month}-${x.day}`;
-  if(quiet(hour,minute,String(p.quiet_start).slice(0,5),String(p.quiet_end).slice(0,5))){skipped++;continue}
   const {data:r,error:workspaceError}=await db.from("lifeos_workspace").select("data").eq("user_id",p.user_id).maybeSingle();if(workspaceError){console.error("Push workspace read failed",workspaceError.message);skipped++;continue}const w=r?.data?.workspace||{},cats=p.categories||{};
   const items:Array<{category:string;key:string;title:string;body:string}>=[];
   const reminderSlot=minute===0&&[8,15,22].includes(hour);
