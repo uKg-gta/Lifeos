@@ -55,14 +55,14 @@ test('consolidated light theme keeps the final contrast values', () => {
   const rosePink = rulesFor('[data-theme="light"][data-accent="rose-pink"]')[0];
   const crimsonRed = rulesFor('[data-theme="light"][data-accent="crimson-red"]')[0];
   const teal = rulesFor('[data-theme="light"][data-accent="teal"]')[0];
-  assert.match(gold, /--accent:\s*#b45309/);
-  assert.match(green, /--accent:\s*#047857/);
-  assert.match(orange, /--accent:\s*#c2410c/);
-  assert.match(grey, /--accent:\s*#475569/);
-  assert.match(royalBlue, /--accent:\s*#1d4ed8/);
-  assert.match(rosePink, /--accent:\s*#be185d/);
-  assert.match(crimsonRed, /--accent:\s*#b91c1c/);
-  assert.match(teal, /--accent:\s*#0f766e/);
+  assert.match(gold, /--accent:\s*#8A6B35/);
+  assert.match(green, /--accent:\s*#456B53/);
+  assert.match(orange, /--accent:\s*#92563F/);
+  assert.match(grey, /--accent:\s*#586575/);
+  assert.match(royalBlue, /--accent:\s*#496483/);
+  assert.match(rosePink, /--accent:\s*#87566F/);
+  assert.match(crimsonRed, /--accent:\s*#87474F/);
+  assert.match(teal, /--accent:\s*#286F68/);
 });
 
 test('small branding, navigation, and account labels remain readable', () => {
@@ -99,4 +99,18 @@ test('task and row layout utilities remain defined only in their shared base rul
   const titles = rulesFor('.taskname, .rowtitle')[0] || '';
   assert.match(layout, /min-width:\s*0/);
   assert.match(titles, /overflow-wrap:\s*anywhere/);
+});
+
+
+test('muted accent palette and default are applied consistently', () => {
+  const expected = {
+    gold: '#B89A62', green: '#789681', orange: '#B17F68', grey: '#89939E',
+    'royal-blue': '#7189AA', 'rose-pink': '#B1849B', 'crimson-red': '#A66F75', teal: '#57958D'
+  };
+  for (const [key, color] of Object.entries(expected)) {
+    const rule = rulesFor('[data-accent="' + key + '"]')[0] || '';
+    assert.match(rule, new RegExp('--accent:\\s*' + color));
+  }
+  assert.match(css, /--accent:\\s*#B89A62/);
+  assert.match(html, /value="gold" selected>Antique Gold/);
 });
