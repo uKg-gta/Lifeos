@@ -312,10 +312,10 @@ function pushKeyBytes(value){
  const padding='='.repeat((4-value.length%4)%4),base=value.replace(/-/g,'+').replace(/_/g,'/')+padding;
  const raw=atob(base);return Uint8Array.from(raw,c=>c.charCodeAt(0));
 }
-function pushStatus(message,enabled=false){const el=$('#pushStatus');if(el)el.textContent=message;const help=$('#pushHelp');if(help&&enabled)help.textContent='This device is registered. Reminders follow your selected categories and quiet hours.'}
+function pushStatus(message,enabled=false){const el=$('#pushStatus');if(el)el.textContent=message;const help=$('#pushHelp');if(help&&enabled)help.textContent='This device is registered. Reminders follow your selected categories.'}
 function readPushPrefs(){
  const categories={};pushCategories.forEach(k=>categories[k]=$('#push'+k[0].toUpperCase()+k.slice(1))?.checked!==false);
- return {categories,quiet_start:$('#pushQuietStart')?.value||'22:00',quiet_end:$('#pushQuietEnd')?.value||'07:00',timezone:Intl.DateTimeFormat().resolvedOptions().timeZone||'Asia/Kolkata'};
+ return {categories,timezone:Intl.DateTimeFormat().resolvedOptions().timeZone||'Asia/Kolkata'};
 }
 async function loadPushPrefs(){
  if(!supabase||!cloudUser)return;
@@ -324,7 +324,6 @@ async function loadPushPrefs(){
   if(error)throw error;
   if(data){
    pushCategories.forEach(k=>{const el=$('#push'+k[0].toUpperCase()+k.slice(1));if(el)el.checked=data.categories?.[k]!==false});
-   $('#pushQuietStart').value=String(data.quiet_start||'22:00').slice(0,5);$('#pushQuietEnd').value=String(data.quiet_end||'07:00').slice(0,5);
    pushStatus(data.enabled?'Preferences saved':'Not enabled');
   }
   const {data:subs,error:subError}=await supabase.from('lifeos_push_subscriptions').select('id').eq('user_id',cloudUser.id).limit(1);
@@ -335,7 +334,7 @@ async function loadPushPrefs(){
 async function savePushPreferences(enabled=null){
  if(!supabase||!cloudUser){toast('Sign in to save notification preferences.');return false}
  const prefs=readPushPrefs();
- const {error}=await supabase.from('lifeos_push_preferences').upsert({user_id:cloudUser.id,enabled:enabled===null?undefined:enabled,categories:prefs.categories,quiet_start:prefs.quiet_start,quiet_end:prefs.quiet_end,timezone:prefs.timezone,updated_at:new Date().toISOString()},{onConflict:'user_id'});
+ const {error}=await supabase.from('lifeos_push_preferences').upsert({user_id:cloudUser.id,enabled:enabled===null?undefined:enabled,categories:prefs.categories,timezone:prefs.timezone,updated_at:new Date().toISOString()},{onConflict:'user_id'});
  if(error){toast('Could not save notification preferences: '+error.message);return false}
  return true;
 }
