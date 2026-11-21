@@ -119,7 +119,7 @@ async function signOutFromLifeOS(){
  if(dirty){if(btn)btn.disabled=true;const ok=await flushCloud();if(!ok||dirty){if(btn)btn.disabled=false;toast('Sign-out paused: your latest changes are not confirmed in the cloud. Reconnect and retry.');return}}
  cloudReady=false;if(btn)btn.disabled=true;try{const {error}=await supabase.auth.signOut({scope:'local'});if(error)throw error;handleSignedOut('Signed out. Your workspace remains in the cloud.')}catch(error){cloudReady=!!cloudUser;toast('Could not sign out: '+(error?.message||'Please retry.'))}finally{if(btn)btn.disabled=false}
 }
-function hideStartupSplash(){const splash=$('#startupSplash');if(!splash)return;splash.classList.add('is-hiding');setTimeout(()=>{splash.style.display='none';splash.classList.remove('is-hiding')},180)}
+function hideStartupSplash(){const splash=$('#startupSplash');if(!splash||splash.dataset.hideScheduled==='true')return;splash.dataset.hideScheduled='true';const elapsed=Number(splash.dataset.startedAt||0);const wait=Math.max(0,900-(elapsed?Date.now()-elapsed:0));setTimeout(()=>{splash.classList.add('is-hiding');setTimeout(()=>{splash.style.display='none';splash.classList.remove('is-hiding')},180)},wait)}
 function showStartupError(message){const splash=$('#startupSplash');if(!splash)return;$('#startupMessage').textContent=message;$('#startupRetry').hidden=false;splash.style.display='flex';splash.classList.remove('is-hiding')}
 function handleSignedOut(message){
  cloudReady=false;activating=false;dirty=false;baseRevision=0;baseStamp=null;lastCloudPayload='';baseSnapshot=null;lastLocalSnapshot=null;cloudUser=null;s=seed();prefs=defaultPrefs();window.__lifeosCloudLoaded=false;clearTimeout(cloudTimer);cloudTimer=null;clearConflictActions();
@@ -127,7 +127,7 @@ function handleSignedOut(message){
  $('#accountStatus').textContent='Signed out';$('#accountEmail').textContent='Sign in to load your cloud workspace.';$('#connectCloudBtn').hidden=false;$('#signOutBtn').hidden=true;$('#authGate').style.display='flex';$('#authMessage').textContent=message||'Sign in to access your online workspace.';setSync('Not connected.');
 }
 async function startCloud(){
- const gate=$('#authGate'),msg=$('#authMessage');
+ const gate=$('#authGate'),msg=$('#authMessage');const splash=$('#startupSplash');if(splash&&!splash.dataset.startedAt){splash.dataset.startedAt=String(Date.now());splash.dataset.hideScheduled='false'}
  $('#signOutBtn').onclick=signOutFromLifeOS;
  $('#startupRetry').onclick=()=>location.reload();
  const startupTimeout=setTimeout(()=>{const splash=$('#startupSplash');if(splash&&splash.style.display!=='none')showStartupError('This is taking longer than expected. Your saved entries are safe. Tap Try Again to retry.');},10000);
