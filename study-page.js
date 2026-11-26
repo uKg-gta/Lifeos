@@ -9,10 +9,30 @@
     function subjectNames(){const state=getState();return [...new Set([...(state.subjects||[]),...state.syllabus.map(item=>item.subject),...state.sessions.map(item=>item.subject)].filter(Boolean))].sort((a,b)=>a.localeCompare(b))}
     function subjectOptions(selected=''){const names=subjectNames();if(selected&&!names.includes(selected))names.push(selected);return names.map(name=>'<option '+(name===selected?'selected':'')+'>'+safe(name)+'</option>').join('')}
     function refreshSubjectControls(){
-      const state=getState(),names=subjectNames(),timer=$('#timerSubject');
-      if(timer){const current=timer.value;timer.innerHTML='<option value="">Select subject</option>'+names.map(name=>'<option>'+safe(name)+'</option>').join('');if(current&&names.includes(current))timer.value=current}
+      const state=getState(),timerExam=$('#timerExam'),timerSubject=$('#timerSubject'),timerTopic=$('#timerTopic');
       const examSelect=$('#examSelect');
       if(examSelect){const current=examSelect.value;examSelect.innerHTML='<option value="">Select an exam</option>'+state.exams.map(exam=>'<option value="'+safe(exam.name)+'">'+safe(exam.name)+'</option>').join('');if(current&&state.exams.some(exam=>exam.name===current))examSelect.value=current}
+      if(timerExam){
+        const current=timerExam.value;
+        timerExam.innerHTML='<option value="">No exam selected</option>'+state.exams.map(exam=>'<option value="'+safe(exam.name)+'">'+safe(exam.name)+'</option>').join('');
+        if(current&&state.exams.some(exam=>exam.name===current))timerExam.value=current;
+      }
+      const examName=timerExam?.value||'';
+      const subjects=[...new Set(state.syllabus.filter(item=>item.exam===examName&&item.subject).map(item=>item.subject))].sort((a,b)=>a.localeCompare(b));
+      const selectedSubject=timerSubject?.value||'';
+      if(timerSubject){
+        timerSubject.innerHTML='<option value="">Select a subject</option>'+subjects.map(name=>'<option value="'+safe(name)+'">'+safe(name)+'</option>').join('');
+        timerSubject.disabled=!examName||!subjects.length;
+        if(selectedSubject&&subjects.includes(selectedSubject))timerSubject.value=selectedSubject;
+      }
+      const subjectName=timerSubject?.value||'';
+      const topics=state.syllabus.filter(item=>item.exam===examName&&item.subject===subjectName&&item.topic);
+      const selectedTopic=timerTopic?.value||'';
+      if(timerTopic){
+        timerTopic.innerHTML='<option value="">Select a topic</option>'+topics.map(item=>'<option value="'+safe(item.topic)+'">'+safe(item.topic)+'</option>').join('');
+        timerTopic.disabled=!examName||!subjectName||!topics.length;
+        if(selectedTopic&&topics.some(item=>item.topic===selectedTopic))timerTopic.value=selectedTopic;
+      }
     }
     function sessionRow(session){return '<div class="row"><div class="rowmain"><div class="rowtitle">'+safe(session.subject||'No subject')+(session.topic?' · '+safe(session.topic):'')+'</div><div class="rowsub">'+safe(sessionDateLabel(session.date))+' · '+safe(session.type||'Study')+'</div></div><span class="status active">'+formatMinutes(session.minutes)+'</span><button class="textbtn" data-del-session="'+session.id+'" aria-label="Delete session">×</button></div>'}
     function wireSessions(){queryAll('[data-del-session]').forEach(button=>button.onclick=()=>{const state=getState(),index=state.sessions.findIndex(item=>item.id===Number(button.dataset.delSession));if(index<0)return;const old=state.sessions.splice(index,1)[0];save();render();toast('Session deleted.',()=>{getState().sessions.splice(Math.min(index,getState().sessions.length),0,old)})})}
