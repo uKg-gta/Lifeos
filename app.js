@@ -247,7 +247,8 @@ function bindGlobalsOnce(){
     if(document.hidden){flushCloud();return}
     dayCheck();ensureTick();timerRender();syncNow();
   });
-  window.addEventListener('pagehide',flushCloud);
+  window.addEventListener('pagehide',()=>{focusTimer.timerPause();flushCloud()});
+  window.addEventListener('beforeunload',()=>focusTimer.timerPause());
   window.addEventListener('online',()=>{if(!cloudReady){startCloud();return}if(dirty)pushCloud();else syncNow()});
   window.addEventListener('offline',()=>{setSync('Offline — reconnect to sync your workspace.')});
   setInterval(()=>{updateDateLabels();updateLifeOSGreeting();dayCheck()},30000);
