@@ -33,6 +33,7 @@
       const state=getState();$('#habitList').innerHTML=state.habits.map(habit=>habitRow(habit,true)).join('')||'<div class="empty">Create a habit once. It will appear automatically on its scheduled days.</div>';
       const stats=habitStats(),scheduled=state.habits.filter(habitScheduled);$('#habitMetric').textContent=scheduled.filter(habit=>habitDone(habit)).length+' / '+scheduled.length;
       $('#habitStreakMetric').textContent=stats.best+' day'+(stats.best===1?'':'s');$('#habitCompletionMetric').textContent=stats.rate+'%';
+      wire();
     }
     return Object.freeze({habitScheduledOn,habitScheduled,habitHistory,habitDone,habitStreak,habitStats,habitRow,habitsPage});
   }
