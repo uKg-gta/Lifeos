@@ -7,7 +7,7 @@
   function create(deps){
     const {$,queryAll,getState,dayKey,save,render,toast,wire,safe,modal,inPageConfirm}=deps;
     function weekdayKey(key){return new Date(key+'T12:00:00').getDay()}
-    function habitScheduledOn(habit,key){const day=weekdayKey(key);return !habit.days||habit.days.length===0||habit.days.includes(day)}
+    function habitScheduledOn(habit,key){const day=weekdayKey(key);if(habit.frequency==='selected')return Array.isArray(habit.days)&&habit.days.includes(day);return true}
     function habitScheduled(habit){return habitScheduledOn(habit,dayKey())}
     function habitHistory(habit){const history=Array.isArray(habit.history)?habit.history.slice():[];if(habit.doneDate&&!history.includes(habit.doneDate))history.push(habit.doneDate);return [...new Set(history.filter(value=>/^\d{4}-\d{2}-\d{2}$/.test(value)))].sort()}
     function habitDone(habit,key=dayKey()){return habitHistory(habit).includes(key)}
