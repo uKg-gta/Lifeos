@@ -2,22 +2,12 @@
 (function(root,factory){
   const api=factory();
   if(typeof module==='object'&&module.exports)module.exports=api;
-  else root.LifeOSProjectsPage=api;
+  else root.LifeOSGoalsPage=api;
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
   function create(deps){
     const {$,queryAll,getState,safe,save,render,toast,modal,inPageConfirm,bindModalClose,showModal,closeModal}=deps;
-    function renderProjectCards(){
-      const grid=$('#projectGrid');if(!grid)return;grid.replaceChildren();const state=getState();
-      if(!state.projects.length){const empty=document.createElement('div');empty.className='empty';empty.textContent='No projects yet. Add a project to track a small piece of work.';grid.append(empty);return}
-      state.projects.forEach(project=>{
-        const card=document.createElement('article');card.className='module goal-card';const heading=document.createElement('div');heading.className='head';
-        const title=document.createElement('b');title.textContent=project.title;const remove=document.createElement('button');remove.type='button';remove.className='textbtn';remove.textContent='Delete';remove.setAttribute('aria-label','Delete project '+project.title);heading.append(title,remove);
-        const detail=document.createElement('div');detail.className='rowsub';detail.textContent=(project.status||'Not started')+' · '+(project.done||0)+' of '+(project.tasks||0)+' linked tasks';card.append(heading,detail);grid.append(card);
-        remove.onclick=()=>{const state=getState(),index=state.projects.findIndex(item=>item.id===project.id);if(index<0)return;const removed=state.projects.splice(index,1)[0];save();renderProjectCards();toast('Project deleted.',()=>{getState().projects.splice(Math.min(index,getState().projects.length),0,removed);save();renderProjectCards()})};
-      });
-    }
     function projectsPage(){
-      const state=getState();renderProjectCards();const active=state.goals.filter(goal=>goal.status!=='Completed').length;$('#goalTotal').textContent=state.goals.length;$('#goalCount').textContent=active;
+      const state=getState();const active=state.goals.filter(goal=>goal.status!=='Completed').length;$('#goalTotal').textContent=state.goals.length;$('#goalCount').textContent=active;
       $('#goalGrid').innerHTML=state.goals.map(goal=>{const subgoals=goal.subgoals||[],done=subgoals.filter(item=>item.done).length,percent=subgoals.length?Math.round(done/subgoals.length*100):0;return '<article class="module goal-card" data-open-goal="'+goal.id+'" tabindex="0"><div class="moduleicon">'+(goal.area==='Studies'?'▤':goal.area==='Health'?'◉':'◇')+'</div><b>'+safe(goal.title)+'</b><p>'+safe(goal.desc||'No description added yet.')+'</p>'+(subgoals.length?'<div class="bar"><div style="width:'+percent+'%"></div></div><div class="tiny muted">'+done+' of '+subgoals.length+' sub-goals · '+percent+'%</div>':'<div class="tiny muted">No sub-goals added</div>')+'<div class="modulefoot"><span>'+safe(goal.area)+(goal.date?' · '+safe(goal.date):' · No target date')+'</span><span>'+safe(goal.status)+'</span></div></article>'}).join('')||'<div class="empty">Your long-term goals will appear here. Create your first goal when you are ready.</div>';
       queryAll('[data-open-goal]').forEach(element=>{const open=()=>openGoal(Number(element.dataset.openGoal));element.onclick=open;element.onkeydown=event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();open()}}});
     }
@@ -32,7 +22,7 @@
       $('#editGoal').onclick=()=>modal('goal',goal);
       $('#deleteGoal').onclick=()=>inPageConfirm('Delete goal','Delete goal “'+goal.title+'”? Its sub-goals and timeline will also be removed.',()=>{const state=getState(),index=state.goals.findIndex(item=>item.id===goal.id);if(index<0)return;const removed=state.goals.splice(index,1)[0];closeModal();save();render();toast('Goal deleted.',()=>state.goals.splice(Math.min(index,state.goals.length),0,removed))},true);
     }
-    return Object.freeze({renderProjectCards,projectsPage,openGoal});
+    return Object.freeze({goalsPage:projectsPage,openGoal});
   }
   return Object.freeze({create});
 });
